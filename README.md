@@ -15,7 +15,39 @@ Include the following in your pom/gradle
 
 ```groovy
 dependencies {
-    implementation 'com.codeheadsystems:metrics:1.0.0'
-    testImplementation 'com.codeheadsystems:metrics-test:1.0.0'
+    implementation 'com.codeheadsystems:metrics:1.0.1'
+    testImplementation 'com.codeheadsystems:metrics-test:1.0.1'
+}
+```
+
+## Example code
+
+The following is a basic example case. More complex examples are possible.
+
+### Java code that uses metrics
+
+```java
+public class AClass {
+  private final Metrics metrics;
+  public AClass(final Metrics metrics){
+    this.metrics = metrics;
+  }
+  public boolean doSomething() {
+    return metrics.time("MetricName", () -> {
+      return System.currentTimeMillis() > 1000;
+    });
+  }
+}
+```
+
+### Unit Test Example
+
+```java
+public class AClassTest extends BaseMetricTest {
+  @Test
+  public void testDoSomething_works(){
+    final ACLass testInstance = new AClass(metrics); // metrics from parent class
+    assert testInstance.doSomething == true; // The supplier is called from the metrics object
+  }
 }
 ```

@@ -53,7 +53,7 @@ public abstract class BaseMetricTest {
   }
 
   @BeforeEach
-  protected void setup() {
+  protected void setupMetrics() {
     metrics = new Metrics(meterRegistry);
   }
 
