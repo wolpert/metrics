@@ -20,6 +20,8 @@ import static com.codeheadsystems.metrics.dagger.MetricsModule.METER_REGISTRY;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tag;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import java.util.function.Supplier;
 import javax.inject.Inject;
@@ -34,6 +36,8 @@ public class Metrics {
 
   private final MeterRegistry registry;
 
+  private final ThreadLocal<Tags> tagThreadLocal;
+
   /**
    * Default constructor.
    *
@@ -42,6 +46,50 @@ public class Metrics {
   @Inject
   public Metrics(@Named(METER_REGISTRY) final MeterRegistry registry) {
     this.registry = registry;
+    tagThreadLocal = ThreadLocal.withInitial(Tags::empty);
+  }
+
+  /**
+   * Closes the tags/resets.
+   */
+  public void close() {
+    tagThreadLocal.set(Tags.empty());
+  }
+
+  /**
+   * Gets the current tags. Changing tags from this object are not saved in the thread local.
+   *
+   * @return tags.
+   */
+  public Tags getTags() {
+    return tagThreadLocal.get();
+  }
+
+  /**
+   * Adds the thread local tags here.
+   *
+   * @param tags to add.
+   */
+  public void and(final Tags tags) {
+    tagThreadLocal.set(getTags().and(tags));
+  }
+
+  /**
+   * Adds the thread local tags here.
+   *
+   * @param tag to add.
+   */
+  public void and(final Tag tag) {
+    tagThreadLocal.set(getTags().and(tag));
+  }
+
+  /**
+   * Adds the thread local tags here.
+   *
+   * @param tags to add.
+   */
+  public void and(final String... tags) {
+    tagThreadLocal.set(getTags().and(tags));
   }
 
   /**
@@ -62,7 +110,7 @@ public class Metrics {
    * @return thing we did.
    */
   public <R> R time(final String name, final Supplier<R> supplier) {
-    return time(name, registry.timer(name), supplier);
+    return time(name, registry.timer(name, getTags()), supplier);
   }
 
   /**
@@ -77,8 +125,8 @@ public class Metrics {
   public <R> R time(final String name,
                     final Timer timer,
                     final Supplier<R> supplier) {
-    final Counter success = registry.counter(name, "success", "true");
-    final Counter failure = registry.counter(name, "success", "false");
+    final Counter success = registry.counter(name, getTags().and("success", "true"));
+    final Counter failure = registry.counter(name, getTags().and("success", "false"));
     return time(timer, success, failure, supplier);
   }
 

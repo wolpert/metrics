@@ -27,11 +27,10 @@ buildscript {
 
 allprojects {
     group 'com.codeheadsystems'
-    version '1.0.1'
+    version '1.0.2-SNAPSHOT'
     apply plugin: "java-library"
     apply plugin: "eclipse"
     apply plugin: 'jacoco'
-    apply plugin: 'checkstyle'
     apply plugin: 'signing'
     apply plugin: 'maven-publish'
     java {
@@ -51,10 +50,6 @@ allprojects {
     test {
         useJUnitPlatform() // needed for junit5
         finalizedBy jacocoTestReport
-    }
-    checkstyleTest { // ignore checkstyle in tests
-        ignoreFailures true
-        showViolations false
     }
     jacocoTestReport {
         dependsOn test
