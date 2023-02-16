@@ -22,6 +22,7 @@ import com.codahale.metrics.Slf4jReporter;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.helper.DropwizardMetricsHelper;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
 import org.junit.jupiter.api.AfterAll;
@@ -54,7 +55,7 @@ public abstract class BaseMetricTest {
 
   @BeforeEach
   protected void setupMetrics() {
-    metrics = new Metrics(meterRegistry);
+    metrics = new Metrics(meterRegistry, Tags::empty);
   }
 
 }

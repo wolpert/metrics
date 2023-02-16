@@ -41,12 +41,14 @@ public class Metrics {
   /**
    * Default constructor.
    *
-   * @param registry to use.
+   * @param registry    to use.
+   * @param defaultTags if available.
    */
   @Inject
-  public Metrics(@Named(METER_REGISTRY) final MeterRegistry registry) {
+  public Metrics(@Named(METER_REGISTRY) final MeterRegistry registry,
+                 final Supplier<Tags> defaultTags) {
     this.registry = registry;
-    tagThreadLocal = ThreadLocal.withInitial(Tags::empty);
+    tagThreadLocal = ThreadLocal.withInitial(defaultTags::get);
   }
 
   /**

@@ -20,8 +20,10 @@ import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
 import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -37,6 +39,11 @@ public class MetricsModule {
    * Identifier for clients to supply their own registry via dagger.
    */
   public static final String PROVIDED_METER_REGISTRY = "Provided Meter Registry";
+
+  /**
+   * Optional default tags to use.
+   */
+  public static final String PROVIDED_DEFAULT_METRIC_TAGS = "Provided default metric tags";
 
   /**
    * Namespace of the actual registry to use.
@@ -83,6 +90,22 @@ public class MetricsModule {
   }
 
   /**
+   * Will provide the default tags.
+   *
+   * @param tags that are given by the app, if set.
+   * @return the tags.
+   */
+  @Provides
+  @Singleton
+  public Supplier<Tags> defaultTags(@Named(PROVIDED_DEFAULT_METRIC_TAGS) final Optional<Tags> tags) {
+    if (tags.isPresent()) {
+      return tags::get;
+    } else {
+      return Tags::empty;
+    }
+  }
+
+  /**
    * Binder module.
    */
   @Module
@@ -96,6 +119,15 @@ public class MetricsModule {
     @Named(PROVIDED_METER_REGISTRY)
     @BindsOptionalOf
     MeterRegistry meterRegistry();
+
+    /**
+     * Set your default tags if you want.
+     *
+     * @return tags.
+     */
+    @Named(PROVIDED_DEFAULT_METRIC_TAGS)
+    @BindsOptionalOf
+    Tags defaulTags();
 
   }
 
