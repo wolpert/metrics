@@ -104,6 +104,27 @@ public class Metrics {
   }
 
   /**
+   * Returns a counter with the default tags.
+   *
+   * @param name counter.
+   * @return the counter.
+   */
+  public Counter counter(final String name) {
+    return registry.counter(name, getTags());
+  }
+
+  /**
+   * Returns a counter with the default tags and the tags you give it.
+   *
+   * @param name       counter.
+   * @param customTags the custom tags.
+   * @return the counter.
+   */
+  public Counter counter(final String name, final Tags customTags) {
+    return registry.counter(name, getTags().and(customTags));
+  }
+
+  /**
    * Times the supplier setting up metric based on the name.
    *
    * @param name     for metrics.
@@ -113,6 +134,19 @@ public class Metrics {
    */
   public <R> R time(final String name, final Supplier<R> supplier) {
     return time(name, registry.timer(name, getTags()), supplier);
+  }
+
+  /**
+   * Times the supplier setting up metric based on the name.
+   *
+   * @param name       for metrics.
+   * @param customTags the custom tags.
+   * @param supplier   to return the thing.
+   * @param <R>        type of thing.
+   * @return thing we did.
+   */
+  public <R> R time(final String name, final Tags customTags, final Supplier<R> supplier) {
+    return time(name, customTags, registry.timer(name, getTags().and(customTags)), supplier);
   }
 
   /**
@@ -127,8 +161,27 @@ public class Metrics {
   public <R> R time(final String name,
                     final Timer timer,
                     final Supplier<R> supplier) {
-    final Counter success = registry.counter(name, getTags().and("success", "true"));
-    final Counter failure = registry.counter(name, getTags().and("success", "false"));
+    final Counter success = counter(name, Tags.of("success", "true"));
+    final Counter failure = counter(name, Tags.of("success", "false"));
+    return time(timer, success, failure, supplier);
+  }
+
+  /**
+   * Helper method to time a request and include the success counters.
+   *
+   * @param name       for metrics.
+   * @param customTags the custom tags.
+   * @param supplier   to return the thing.
+   * @param <R>        type of thing.
+   * @param timer      Timer to use.
+   * @return thing we did.
+   */
+  public <R> R time(final String name,
+                    final Tags customTags,
+                    final Timer timer,
+                    final Supplier<R> supplier) {
+    final Counter success = counter(name, customTags.and("success", "true"));
+    final Counter failure = counter(name, customTags.and("success", "false"));
     return time(timer, success, failure, supplier);
   }
 
@@ -143,7 +196,10 @@ public class Metrics {
    * @param timer    Timer to use.
    * @return thing we did.
    */
-  public <R> R time(final Timer timer, final Counter success, final Counter failure, final Supplier<R> supplier) {
+  public <R> R time(final Timer timer,
+                    final Counter success,
+                    final Counter failure,
+                    final Supplier<R> supplier) {
     try {
       final R result = timer.record(supplier);
       success.increment(1);
