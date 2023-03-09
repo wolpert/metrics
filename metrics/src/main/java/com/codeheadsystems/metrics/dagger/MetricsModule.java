@@ -45,11 +45,6 @@ public class MetricsModule {
    */
   public static final String PROVIDED_DEFAULT_METRIC_TAGS = "Provided default metric tags";
 
-  /**
-   * Namespace of the actual registry to use.
-   */
-  public static final String METER_REGISTRY = "Meter Registry";
-
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricsModule.class);
 
   private final MeterRegistry override;
@@ -78,7 +73,6 @@ public class MetricsModule {
    */
   @Provides
   @Singleton
-  @Named(METER_REGISTRY)
   public MeterRegistry meterRegistry(@Named(PROVIDED_METER_REGISTRY) Optional<MeterRegistry> optionalMeterRegistry) {
     LOGGER.info("Provided metric: {}", optionalMeterRegistry.isPresent());
     if (override != null) {

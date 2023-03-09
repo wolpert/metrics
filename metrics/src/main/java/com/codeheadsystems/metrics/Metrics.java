@@ -16,8 +16,6 @@
 
 package com.codeheadsystems.metrics;
 
-import static com.codeheadsystems.metrics.dagger.MetricsModule.METER_REGISTRY;
-
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tag;
@@ -25,7 +23,6 @@ import io.micrometer.core.instrument.Tags;
 import io.micrometer.core.instrument.Timer;
 import java.util.function.Supplier;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Singleton;
 
 /**
@@ -45,7 +42,7 @@ public class Metrics {
    * @param defaultTags if available.
    */
   @Inject
-  public Metrics(@Named(METER_REGISTRY) final MeterRegistry registry,
+  public Metrics(final MeterRegistry registry,
                  final Supplier<Tags> defaultTags) {
     this.registry = registry;
     tagThreadLocal = ThreadLocal.withInitial(defaultTags::get);
