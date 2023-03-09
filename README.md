@@ -15,8 +15,8 @@ Include the following in your pom/gradle
 
 ```groovy
 dependencies {
-    implementation 'com.codeheadsystems:metrics:1.0.1'
-    testImplementation 'com.codeheadsystems:metrics-test:1.0.1'
+    implementation 'com.codeheadsystems:metrics:1.0.2'
+    testImplementation 'com.codeheadsystems:metrics-test:1.0.2'
 }
 ```
 
