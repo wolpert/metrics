@@ -29,6 +29,7 @@ allprojects {
     group 'com.codeheadsystems'
     version '1.0.3-SNAPSHOT'
     apply plugin: "java-library"
+    apply plugin: "jvm-test-suite"
     apply plugin: "eclipse"
     apply plugin: 'jacoco'
     apply plugin: 'signing'
@@ -48,7 +49,6 @@ allprojects {
         maven { url "https://oss.sonatype.org/content/repositories/releases/" }
     }
     test {
-        useJUnitPlatform() // needed for junit5
         finalizedBy jacocoTestReport
     }
     jacocoTestReport {

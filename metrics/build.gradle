@@ -8,26 +8,34 @@ ext {
     appName = "metrics"
 }
 
-configurations {
-    project.archivesBaseName = "${appName}"
-    jar.archiveBaseName = "${appName}"
+base {
+    archivesName = "${appName}"
+    version = "${version}"
 }
 
+testing {
+    suites {
+        test {
+            useJUnitJupiter()
+            dependencies {
+                implementation libs.junit.jupiter.api
+                implementation libs.assertj.core
+                implementation libs.mockito.junit.jupiter
+                implementation libs.mockito.core
+                // Use JUnit Jupiter Engine for testing.
+                runtimeOnly libs.junit.jupiter.engine
+                implementation libs.log4j.api
+                implementation libs.log4j.core
+            }
+        }
+    }
+}
 dependencies {
     implementation libs.micrometer.core
     implementation libs.metrics.core
     implementation libs.slf4j.api
     implementation libs.dagger // Common files for runtime
     annotationProcessor libs.dagger.compiler
-
-    testImplementation libs.junit.jupiter.api
-    testImplementation libs.assertj.core
-    testImplementation libs.mockito.junit.jupiter
-    testImplementation libs.mockito.core
-    // Use JUnit Jupiter Engine for testing.
-    testRuntimeOnly libs.junit.jupiter.engine
-    testImplementation libs.log4j.api
-    testImplementation libs.log4j.core
 }
 
 publishing {

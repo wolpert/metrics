@@ -8,9 +8,17 @@ ext {
     appName = "metrics-test"
 }
 
-configurations {
-    project.archivesBaseName = "${appName}"
-    jar.archiveBaseName = "${appName}"
+base {
+    archivesName = "${appName}"
+    version = "${version}"
+}
+
+testing {
+    suites {
+        test {
+            useJUnitJupiter()
+        }
+    }
 }
 
 dependencies {
