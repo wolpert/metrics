@@ -117,7 +117,7 @@ public class MetricsModule {
     /**
      * Set your default tags if you want.
      *
-     * @return tags.
+     * @return tags. tags
      */
     @Named(PROVIDED_DEFAULT_METRIC_TAGS)
     @BindsOptionalOf

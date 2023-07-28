@@ -34,10 +34,22 @@ import org.junit.jupiter.api.BeforeEach;
  */
 public abstract class BaseMetricTest {
 
+  /**
+   * The constant meterRegistry.
+   */
   protected static MeterRegistry meterRegistry;
+  /**
+   * The constant reporter.
+   */
   protected static Reporter reporter;
+  /**
+   * The Metrics.
+   */
   protected Metrics metrics;
 
+  /**
+   * Sets drop wizard.
+   */
   @BeforeAll
   protected static void setupDropWizard() {
     final MetricRegistry metricRegistry = new MetricRegistry();
@@ -48,11 +60,19 @@ public abstract class BaseMetricTest {
     meterRegistry = new DropwizardMetricsHelper().instrument(metricRegistry);
   }
 
+  /**
+   * Report.
+   *
+   * @throws IOException the io exception
+   */
   @AfterAll
   protected static void report() throws IOException {
     reporter.close();
   }
 
+  /**
+   * Sets metrics.
+   */
   @BeforeEach
   protected void setupMetrics() {
     metrics = new Metrics(meterRegistry, Tags::empty);

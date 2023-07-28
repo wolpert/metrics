@@ -58,7 +58,7 @@ public class Metrics {
   /**
    * Gets the current tags. Changing tags from this object are not saved in the thread local.
    *
-   * @return tags.
+   * @return tags. tags
    */
   public Tags getTags() {
     return tagThreadLocal.get();
@@ -94,7 +94,7 @@ public class Metrics {
   /**
    * Getter for the registry.
    *
-   * @return registry.
+   * @return registry. meter registry
    */
   public MeterRegistry registry() {
     return registry;
@@ -124,9 +124,9 @@ public class Metrics {
   /**
    * Times the supplier setting up metric based on the name.
    *
+   * @param <R>      type of thing.
    * @param name     for metrics.
    * @param supplier to return the thing.
-   * @param <R>      type of thing.
    * @return thing we did.
    */
   public <R> R time(final String name, final Supplier<R> supplier) {
@@ -136,10 +136,10 @@ public class Metrics {
   /**
    * Times the supplier setting up metric based on the name.
    *
+   * @param <R>        type of thing.
    * @param name       for metrics.
    * @param customTags the custom tags.
    * @param supplier   to return the thing.
-   * @param <R>        type of thing.
    * @return thing we did.
    */
   public <R> R time(final String name, final Tags customTags, final Supplier<R> supplier) {
@@ -149,10 +149,10 @@ public class Metrics {
   /**
    * Helper method to time a request and include the success counters.
    *
-   * @param name     for metrics.
-   * @param supplier to return the thing.
    * @param <R>      type of thing.
+   * @param name     for metrics.
    * @param timer    Timer to use.
+   * @param supplier to return the thing.
    * @return thing we did.
    */
   public <R> R time(final String name,
@@ -166,11 +166,11 @@ public class Metrics {
   /**
    * Helper method to time a request and include the success counters.
    *
+   * @param <R>        type of thing.
    * @param name       for metrics.
    * @param customTags the custom tags.
-   * @param supplier   to return the thing.
-   * @param <R>        type of thing.
    * @param timer      Timer to use.
+   * @param supplier   to return the thing.
    * @return thing we did.
    */
   public <R> R time(final String name,
@@ -186,11 +186,11 @@ public class Metrics {
   /**
    * Helper method to time a request and include the success counters.
    *
-   * @param failure  metric.
-   * @param success  metric.
-   * @param supplier to return the thing.
    * @param <R>      type of thing.
    * @param timer    Timer to use.
+   * @param success  metric.
+   * @param failure  metric.
+   * @param supplier to return the thing.
    * @return thing we did.
    */
   public <R> R time(final Timer timer,
