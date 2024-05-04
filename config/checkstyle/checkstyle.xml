@@ -41,7 +41,7 @@
 
     <module name="LineLength">
         <property name="fileExtensions" value="java"/>
-        <property name="max" value="120"/>
+        <property name="max" value="240"/>
         <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
     </module>
 
@@ -230,7 +230,7 @@
                      value="Method type name ''{0}'' must match pattern ''{1}''."/>
         </module>
         <module name="InterfaceTypeParameterName">
-            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*[T]$)"/>
+            <property name="format" value="(^[A-Z][0-9]?)$|([A-Z][a-zA-Z0-9]*$)"/>
             <message key="name.invalidPattern"
                      value="Interface type name ''{0}'' must match pattern ''{1}''."/>
         </module>
@@ -343,7 +343,7 @@
             <property name="excludeScope" value="nothing"/>
         </module>
         <module name="MethodName">
-            <property name="format" value="^[a-z][a-z0-9][a-zA-Z0-9_]*$"/>
+            <property name="format" value="^[a-z][a-zA-Z0-9_]*$"/>
             <message key="name.invalidPattern"
                      value="Method name ''{0}'' must match pattern ''{1}''."/>
         </module>

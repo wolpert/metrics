@@ -9,6 +9,9 @@ extend BaseMetricsTest and have access to metrics during your
 development. Makes it easier to use metrics in general by making
 testing easier.
 
+## Status
+![Metrics Build](https://github.com/wolpert/metrics/actions/workflows/gradle.yml/badge.svg)
+
 ## To use
 
 Include the following in your pom/gradle
