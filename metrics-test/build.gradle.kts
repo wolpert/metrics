@@ -35,16 +35,7 @@ tasks.named<Test>("test") {
 publishing {
     publications {
         create<MavenPublication>("mavenJava") {
-            artifactId = "metrics-test"
             from(components["java"])
-            versionMapping {
-                usage("java-api") {
-                    fromResolutionOf("runtimeClasspath")
-                }
-                usage("java-runtime") {
-                    fromResolutionResult()
-                }
-            }
             pom {
                 name = "Metrics-Test"
                 description = "Metrics-Test utilities"
