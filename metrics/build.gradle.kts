@@ -11,7 +11,7 @@ dependencies {
     implementation(libs.micrometer.core)
     implementation(libs.metrics.core)
     implementation(libs.slf4j.api)
-    implementation(libs.dagger) // Common files for runtime
+    implementation(libs.dagger)
     annotationProcessor(libs.dagger.compiler)
 
     testImplementation(libs.bundles.testing)
