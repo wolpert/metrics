@@ -17,8 +17,8 @@
 package com.codeheadsystems.metrics;
 
 import com.codeheadsystems.metrics.impl.MetricImpl;
+import java.time.Clock;
 import java.time.Duration;
-import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +30,7 @@ public class Metrics implements AutoCloseable {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(Metrics.class);
 
+  private final Clock clock;
   private final MetricImpl metricImpl;
   private final TagsSupplier tagsSupplier;
   private Tags tags;
@@ -37,11 +38,14 @@ public class Metrics implements AutoCloseable {
   /**
    * Default constructor.
    *
+   * @param clock       the clock to use.
    * @param metricImpl  the metric implementation.
    * @param defaultTags if available.
    */
-  public Metrics(final MetricImpl metricImpl,
+  public Metrics(final Clock clock,
+                 final MetricImpl metricImpl,
                  final TagsSupplier defaultTags) {
+    this.clock = clock;
     LOGGER.info("Metrics({},{})", metricImpl, defaultTags);
     this.metricImpl = metricImpl;
     this.tagsSupplier = defaultTags;
@@ -116,44 +120,43 @@ public class Metrics implements AutoCloseable {
                                          final TagsGenerator<Throwable> tagsGeneratorForThrowable,
                                          final String... tags) throws E {
     final Tags aggregateTags = getTags().from(tags);
-    final long start = System.nanoTime();
+    final long start = clock.millis();
     long endDuration = 0;
     try {
       final R r = supplier.get();
-      endDuration = System.nanoTime();
+      endDuration = clock.millis();
+      ;
       if (tagsGeneratorForResult != null) {
         aggregateTags.add(tagsGeneratorForResult.from(r));
       }
       return r;
     } catch (final Throwable e) {
-      endDuration = System.nanoTime();
+      endDuration = clock.millis();
+      ;
       if (tagsGeneratorForThrowable != null) {
         aggregateTags.add(tagsGeneratorForThrowable.from(e));
       }
       throw e;
     } finally {
       final long duration = endDuration - start;
-      metricImpl.time(metricName, Duration.ofNanos(duration), aggregateTags);
+      metricImpl.time(metricName, Duration.ofMillis(duration), aggregateTags);
     }
   }
 
   /**
    * Times the action in the supplier.
    *
-   * @param metricName                to store the time.
-   * @param supplier                  which is called to get the result.
-   * @param tagsGeneratorForResult    optional generator for tags based on the result.
-   * @param tagsGeneratorForThrowable optional tag generator for any thrown exception.
-   * @param tags                      optional tags you may want to include.
-   * @param <R>                       the type of result from the supplier.
+   * @param metricName to store the time.
+   * @param supplier   which is called to get the result.
+   * @param tags       optional tags you may want to include.
+   * @param <R>        the type of result from the supplier.
+   * @param <E>        the exception the supplier can throw.
    * @return the result of the supplier.
+   * @throws E if the supplier throws an exception.
    */
-  public <R> R time(final String metricName,
-                    final Supplier<R> supplier,
-                    final TagsGenerator<R> tagsGeneratorForResult,
-                    final TagsGenerator<Throwable> tagsGeneratorForThrowable,
-                    final String... tags) {
-    final CheckedSupplier<R, RuntimeException> checkedSupplier = supplier::get;
-    return this.time(metricName, checkedSupplier, tagsGeneratorForResult, tagsGeneratorForThrowable, tags);
+  public <R, E extends Exception> R time(final String metricName,
+                                         final CheckedSupplier<R, E> supplier,
+                                         final String... tags) throws E {
+    return time(metricName, supplier, null, null, tags);
   }
 }

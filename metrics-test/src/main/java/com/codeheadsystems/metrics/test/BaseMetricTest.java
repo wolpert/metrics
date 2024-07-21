@@ -16,26 +16,35 @@
 
 package com.codeheadsystems.metrics.test;
 
+
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
+import java.time.Clock;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * Extend this to have metrics you can use for your test. Queryable, but calls the needed components.
  */
+@ExtendWith(MockitoExtension.class)
 public abstract class BaseMetricTest {
+
 
   /**
    * The Metrics.
    */
   protected Metrics metrics;
 
+  @Mock protected Clock clock;
+
   /**
    * Sets metrics.
    */
   @BeforeEach
   protected void setupMetrics() {
-    metrics = new Metrics(new NullMetricsImpl(), Tags::new);
+    metrics = new Metrics(clock, new NullMetricsImpl(), Tags::new);
   }
 }
