@@ -1,23 +1,21 @@
 package com.codeheadsystems.metrics.factory;
 
 import com.codeheadsystems.metrics.Metrics;
+import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
 import com.codeheadsystems.metrics.TagsSupplier;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import com.codeheadsystems.metrics.impl.MetricPublisher;
 import com.codeheadsystems.metrics.impl.MetricsImpl;
+import com.codeheadsystems.metrics.impl.NullMetricsPublisher;
 import java.time.Clock;
-import java.util.Optional;
 import java.util.function.Function;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Provides a way to manage metrics from threads.
  */
-@Singleton
 public class MetricFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricFactory.class);
@@ -30,29 +28,16 @@ public class MetricFactory {
 
   private final ThreadLocal<MetricsImpl> metricsImplThreadLocal;
 
-  /**
-   * Default constructor.
-   *
-   * @param clock                            the clock to use.
-   * @param metricPublisher                  the metric implementation.
-   * @param tagsSupplier                     the tags supplier.
-   * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
-   * @param tagsGeneratorRegistry            to help with tags.
-   */
-  @Inject
-  public MetricFactory(final Clock clock,
-                       final MetricPublisher metricPublisher,
-                       final TagsSupplier tagsSupplier,
-                       final Optional<TagsGenerator<Throwable>> defaultTagsGeneratorForThrowable,
-                       final TagsGeneratorRegistry tagsGeneratorRegistry) {
+  private MetricFactory(final Builder builder) {
+    this.clock = builder.clock;
+    this.metricPublisher = builder.metricPublisher;
+    final Tags tags = builder.tags;
+    this.tagsSupplier = () -> tags;
+    this.defaultTagsGeneratorForThrowable = builder.defaultTagsGeneratorForThrowable;
+    this.tagsGeneratorRegistry = builder.tagsGeneratorRegistry;
+    this.metricsImplThreadLocal = ThreadLocal.withInitial(this::newInstance);
     LOGGER.info("MetricFactory({},{},{},{},{})",
         clock, metricPublisher, tagsSupplier, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
-    this.clock = clock;
-    this.metricPublisher = metricPublisher;
-    this.tagsSupplier = tagsSupplier;
-    this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable.orElse(null);
-    this.tagsGeneratorRegistry = tagsGeneratorRegistry;
-    this.metricsImplThreadLocal = ThreadLocal.withInitial(this::newInstance);
   }
 
   private MetricsImpl newInstance() {
@@ -94,6 +79,117 @@ public class MetricFactory {
         LOGGER.warn("Metrics was unable to close", e);
       }
     }
+  }
+
+  /**
+   * The type Builder.
+   */
+  public static class Builder {
+
+    private final Tags tags = Tags.empty();
+    private Clock clock = Clock.systemUTC();
+    private MetricPublisher metricPublisher = new NullMetricsPublisher();
+    private TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
+    private TagsGeneratorRegistry tagsGeneratorRegistry = new TagsGeneratorRegistry();
+
+    /**
+     * Builder builder.
+     *
+     * @return the builder
+     */
+    public static Builder builder() {
+      return new Builder();
+    }
+
+    /**
+     * With clock builder.
+     *
+     * @param clock the clock
+     * @return the builder
+     */
+    public Builder withClock(Clock clock) {
+      this.clock = clock;
+      return this;
+    }
+
+    /**
+     * With metric publisher builder.
+     *
+     * @param metricPublisher the metric publisher
+     * @return the builder
+     */
+    public Builder withMetricPublisher(MetricPublisher metricPublisher) {
+      this.metricPublisher = metricPublisher;
+      return this;
+    }
+
+
+    /**
+     * With tags builder.
+     *
+     * @param tags the tags
+     * @return the builder
+     */
+    public Builder withTags(Tags tags) {
+      this.tags.add(tags);
+      return this;
+    }
+
+    /**
+     * With tags builder.
+     *
+     * @param tags the tags
+     * @return the builder
+     */
+    public Builder withTags(String... tags) {
+      this.tags.add(tags);
+      return this;
+    }
+
+    /**
+     * With default tags generator for throwable builder.
+     *
+     * @param defaultTagsGeneratorForThrowable the default tags generator for throwable
+     * @return the builder
+     */
+    public Builder withDefaultTagsGeneratorForThrowable(TagsGenerator<Throwable> defaultTagsGeneratorForThrowable) {
+      this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable;
+      return this;
+    }
+
+    /**
+     * With tags generator registry builder.
+     *
+     * @param tagsGeneratorRegistry the tags generator registry
+     * @return the builder
+     */
+    public Builder withTagsGeneratorRegistry(TagsGeneratorRegistry tagsGeneratorRegistry) {
+      this.tagsGeneratorRegistry = tagsGeneratorRegistry;
+      return this;
+    }
+
+    /**
+     * With tags generator builder.
+     *
+     * @param <R>           the type parameter
+     * @param clazz         the clazz
+     * @param tagsGenerator the tags generator
+     * @return the builder
+     */
+    public <R> Builder withTagsGenerator(Class<R> clazz, TagsGenerator<R> tagsGenerator) {
+      tagsGeneratorRegistry.register(clazz, tagsGenerator);
+      return this;
+    }
+
+    /**
+     * Build metric factory.
+     *
+     * @return the metric factory
+     */
+    public MetricFactory build() {
+      return new MetricFactory(this);
+    }
+
   }
 
 }

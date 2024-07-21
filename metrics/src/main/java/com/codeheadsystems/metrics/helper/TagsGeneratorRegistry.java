@@ -26,7 +26,7 @@ public class TagsGeneratorRegistry {
    * @param clazz         for the generator.
    * @param tagsGenerator for the class.
    */
-  public void register(final Class<?> clazz, final TagsGenerator<?> tagsGenerator) {
+  public <R> void register(final Class<R> clazz, final TagsGenerator<R> tagsGenerator) {
     tagsGeneratorMap.put(clazz, tagsGenerator);
   }
 
@@ -35,7 +35,7 @@ public class TagsGeneratorRegistry {
    *
    * @param clazz for the generator.
    */
-  public void deregister(final Class<?> clazz) {
+  public <R> void deregister(final Class<R> clazz) {
     tagsGeneratorMap.remove(clazz);
   }
 
