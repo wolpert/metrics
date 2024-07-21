@@ -17,6 +17,7 @@
 package com.codeheadsystems.metrics.test;
 
 
+import com.codeheadsystems.metrics.MetricFactory;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import org.junit.jupiter.api.BeforeEach;
@@ -32,6 +33,7 @@ public abstract class BaseMetricTest {
    */
   protected Metrics metrics;
 
+  protected MetricFactory metricsFactory;
 
   /**
    * Sets metricsImpl.
@@ -39,5 +41,6 @@ public abstract class BaseMetricTest {
   @BeforeEach
   protected void setupMetrics() {
     metrics = new NullMetricsImpl();
+    metricsFactory = MetricFactory.builder().build();
   }
 }

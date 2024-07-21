@@ -9,8 +9,6 @@ plugins {
 
 dependencies {
     implementation(libs.slf4j.api)
-    implementation(libs.dagger)
-    annotationProcessor(libs.dagger.compiler)
 
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.junit.platform.launcher)
