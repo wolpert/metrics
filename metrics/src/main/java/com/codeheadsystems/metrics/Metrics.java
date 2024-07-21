@@ -33,7 +33,9 @@ public class Metrics implements AutoCloseable {
   private final Clock clock;
   private final MetricImpl metricImpl;
   private final TagsSupplier tagsSupplier;
+  private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private Tags tags;
+
 
   /**
    * Default constructor.
@@ -45,10 +47,26 @@ public class Metrics implements AutoCloseable {
   public Metrics(final Clock clock,
                  final MetricImpl metricImpl,
                  final TagsSupplier defaultTags) {
+    this(clock, metricImpl, defaultTags, null);
+  }
+
+  /**
+   * Default constructor.
+   *
+   * @param clock                            the clock to use.
+   * @param metricImpl                       the metric implementation.
+   * @param defaultTags                      if available.
+   * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
+   */
+  public Metrics(final Clock clock,
+                 final MetricImpl metricImpl,
+                 final TagsSupplier defaultTags,
+                 final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable) {
     this.clock = clock;
     LOGGER.info("Metrics({},{})", metricImpl, defaultTags);
     this.metricImpl = metricImpl;
     this.tagsSupplier = defaultTags;
+    this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable;
     tags = new Tags(tagsSupplier.get());
   }
 
@@ -125,16 +143,16 @@ public class Metrics implements AutoCloseable {
     try {
       final R r = supplier.get();
       endDuration = clock.millis();
-      ;
       if (tagsGeneratorForResult != null) {
         aggregateTags.add(tagsGeneratorForResult.from(r));
       }
       return r;
     } catch (final Throwable e) {
       endDuration = clock.millis();
-      ;
       if (tagsGeneratorForThrowable != null) {
         aggregateTags.add(tagsGeneratorForThrowable.from(e));
+      } else if (defaultTagsGeneratorForThrowable != null) {
+        aggregateTags.add(defaultTagsGeneratorForThrowable.from(e));
       }
       throw e;
     } finally {
