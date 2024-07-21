@@ -17,12 +17,12 @@
 package com.codeheadsystems.metrics.impl;
 
 import com.codeheadsystems.metrics.CheckedSupplier;
-import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.MetricPublisher;
+import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
 import com.codeheadsystems.metrics.TagsSupplier;
-import com.codeheadsystems.metrics.helper.TagsGeneratorRegistery;
+import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import java.time.Clock;
 import java.time.Duration;
 import org.slf4j.Logger;
@@ -40,7 +40,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   private final MetricPublisher metricImpl;
   private final TagsSupplier tagsSupplier;
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
-  private final TagsGeneratorRegistery tagsGeneratorRegistery;
+  private final TagsGeneratorRegistry tagsGeneratorRegistry;
   private Tags tags;
 
   /**
@@ -50,15 +50,15 @@ public class MetricsImpl implements AutoCloseable, Metrics {
    * @param metricImpl                       the metric implementation.
    * @param defaultTags                      if available.
    * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
-   * @param tagsGeneratorRegistery              to help with tags.
+   * @param tagsGeneratorRegistry            to help with tags.
    */
   public MetricsImpl(final Clock clock,
                      final MetricPublisher metricImpl,
                      final TagsSupplier defaultTags,
                      final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable,
-                     final TagsGeneratorRegistery tagsGeneratorRegistery) {
+                     final TagsGeneratorRegistry tagsGeneratorRegistry) {
     this.clock = clock;
-    this.tagsGeneratorRegistery = tagsGeneratorRegistery;
+    this.tagsGeneratorRegistry = tagsGeneratorRegistry;
     LOGGER.info("MetricsImpl({},{})", metricImpl, defaultTags);
     this.metricImpl = metricImpl;
     this.tagsSupplier = defaultTags;
@@ -145,8 +145,8 @@ public class MetricsImpl implements AutoCloseable, Metrics {
       endDuration = clock.millis();
       if (tagsGeneratorForResult != null) {
         aggregateTags.add(tagsGeneratorForResult.from(r));
-      } else if (tagsGeneratorRegistery != null) {
-        tagsGeneratorRegistery.aggregateIfFound(aggregateTags, r);
+      } else if (tagsGeneratorRegistry != null) {
+        tagsGeneratorRegistry.aggregateIfFound(aggregateTags, r);
       }
       return r;
     } catch (final Throwable e) {

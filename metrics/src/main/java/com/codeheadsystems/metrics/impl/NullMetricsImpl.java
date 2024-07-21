@@ -25,12 +25,18 @@ public class NullMetricsImpl implements Metrics {
   }
 
   @Override
-  public <R, E extends Exception> R time(final String metricName, final CheckedSupplier<R, E> supplier, final TagsGenerator<R> tagsGeneratorForResult, final TagsGenerator<Throwable> tagsGeneratorForThrowable, final String... tags) throws E {
+  public <R, E extends Exception> R time(final String metricName,
+                                         final CheckedSupplier<R, E> supplier,
+                                         final TagsGenerator<R> tagsGeneratorForResult,
+                                         final TagsGenerator<Throwable> tagsGeneratorForThrowable,
+                                         final String... tags) throws E {
     return supplier.get();
   }
 
   @Override
-  public <R, E extends Exception> R time(final String metricName, final CheckedSupplier<R, E> supplier, final String... tags) throws E {
+  public <R, E extends Exception> R time(final String metricName,
+                                         final CheckedSupplier<R, E> supplier,
+                                         final String... tags) throws E {
     return supplier.get();
   }
 }

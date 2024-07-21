@@ -9,14 +9,14 @@ import java.util.Set;
 /**
  * Gives you the ability to register generators for tags.
  */
-public class TagsGeneratorRegistery {
+public class TagsGeneratorRegistry {
 
   private final Map<Class<?>, TagsGenerator<?>> tagsGeneratorMap;
 
   /**
    * Default Constructor.
    */
-  public TagsGeneratorRegistery() {
+  public TagsGeneratorRegistry() {
     this.tagsGeneratorMap = new HashMap<>();
   }
 

@@ -8,7 +8,7 @@ import static org.mockito.Mockito.when;
 import com.codeheadsystems.metrics.MetricPublisher;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
-import com.codeheadsystems.metrics.helper.TagsGeneratorRegistery;
+import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import java.time.Clock;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -33,7 +33,7 @@ class MetricsImplTest {
 
   @Mock private MetricPublisher metricPublisher;
   @Mock private Clock clock;
-  @Mock private TagsGeneratorRegistery tagsGeneratorRegistery;
+  @Mock private TagsGeneratorRegistry tagsGeneratorRegistry;
 
   private MetricsImpl metricsImpl;
 
