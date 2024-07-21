@@ -1,5 +1,6 @@
-package com.codeheadsystems.metrics;
+package com.codeheadsystems.metrics.impl;
 
+import com.codeheadsystems.metrics.Tags;
 import java.time.Duration;
 
 /**

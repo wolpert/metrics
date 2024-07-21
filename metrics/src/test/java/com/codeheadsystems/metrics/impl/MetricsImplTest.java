@@ -5,7 +5,6 @@ import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.codeheadsystems.metrics.MetricPublisher;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;

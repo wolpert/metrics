@@ -17,7 +17,6 @@
 package com.codeheadsystems.metrics.impl;
 
 import com.codeheadsystems.metrics.CheckedSupplier;
-import com.codeheadsystems.metrics.MetricPublisher;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
@@ -37,7 +36,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricsImpl.class);
 
   private final Clock clock;
-  private final MetricPublisher metricImpl;
+  private final MetricPublisher metricPublisher;
   private final TagsSupplier tagsSupplier;
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
@@ -47,20 +46,20 @@ public class MetricsImpl implements AutoCloseable, Metrics {
    * Default constructor.
    *
    * @param clock                            the clock to use.
-   * @param metricImpl                       the metric implementation.
+   * @param metricPublisher                  the metric implementation.
    * @param defaultTags                      if available.
    * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
    * @param tagsGeneratorRegistry            to help with tags.
    */
   public MetricsImpl(final Clock clock,
-                     final MetricPublisher metricImpl,
+                     final MetricPublisher metricPublisher,
                      final TagsSupplier defaultTags,
                      final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable,
                      final TagsGeneratorRegistry tagsGeneratorRegistry) {
     this.clock = clock;
     this.tagsGeneratorRegistry = tagsGeneratorRegistry;
-    LOGGER.info("MetricsImpl({},{})", metricImpl, defaultTags);
-    this.metricImpl = metricImpl;
+    LOGGER.info("MetricsImpl({},{})", metricPublisher, defaultTags);
+    this.metricPublisher = metricPublisher;
     this.tagsSupplier = defaultTags;
     this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable;
     tags = new Tags(tagsSupplier.get());
@@ -69,7 +68,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   @Override
   public void close() throws Exception {
     LOGGER.info("close()");
-    metricImpl.close();
+    metricPublisher.close();
     tags = new Tags(tagsSupplier.get());
   }
 
@@ -82,61 +81,30 @@ public class MetricsImpl implements AutoCloseable, Metrics {
     return tags;
   }
 
-  /**
-   * Adds the thread local tags here.
-   * overrideTags
-   *
-   * @param overrideTags to add.
-   */
   @Override
   public Tags and(final Tags overrideTags) {
     getTags().add(overrideTags);
     return tags;
   }
 
-  /**
-   * Adds the thread local tags here.
-   *
-   * @param overrideTags to add.
-   */
   @Override
   public Tags and(final String... overrideTags) {
     getTags().add(overrideTags);
     return tags;
   }
 
-  /**
-   * Increments the metric with the value.
-   *
-   * @param metricName to increment.
-   * @param value      the value to add.
-   * @param tags       to use, if any.
-   */
   @Override
-  public void increment(final String metricName, final long value, final String... tags) {
+  public void increment(final String metricName, final long value, final Tags tags) {
     final Tags aggregateTags = getTags().from(tags);
-    metricImpl.increment(metricName, value, aggregateTags);
+    metricPublisher.increment(metricName, value, aggregateTags);
   }
 
-  /**
-   * Times the action in the supplier.
-   *
-   * @param metricName                to store the time.
-   * @param supplier                  which is called to get the result.
-   * @param tagsGeneratorForResult    optional generator for tags based on the result.
-   * @param tagsGeneratorForThrowable optional tag generator for any thrown exception.
-   * @param tags                      optional tags you may want to include.
-   * @param <R>                       the type of result from the supplier.
-   * @param <E>                       the exception the supplier can throw.
-   * @return the result of the supplier.
-   * @throws E if the supplier throws an exception.
-   */
   @Override
   public <R, E extends Exception> R time(final String metricName,
                                          final CheckedSupplier<R, E> supplier,
                                          final TagsGenerator<R> tagsGeneratorForResult,
                                          final TagsGenerator<Throwable> tagsGeneratorForThrowable,
-                                         final String... tags) throws E {
+                                         final Tags tags) throws E {
     final Tags aggregateTags = getTags().from(tags);
     final long start = clock.millis();
     long endDuration = 0;
@@ -159,25 +127,14 @@ public class MetricsImpl implements AutoCloseable, Metrics {
       throw e;
     } finally {
       final long duration = endDuration - start;
-      metricImpl.time(metricName, Duration.ofMillis(duration), aggregateTags);
+      metricPublisher.time(metricName, Duration.ofMillis(duration), aggregateTags);
     }
   }
 
-  /**
-   * Times the action in the supplier.
-   *
-   * @param metricName to store the time.
-   * @param supplier   which is called to get the result.
-   * @param tags       optional tags you may want to include.
-   * @param <R>        the type of result from the supplier.
-   * @param <E>        the exception the supplier can throw.
-   * @return the result of the supplier.
-   * @throws E if the supplier throws an exception.
-   */
   @Override
   public <R, E extends Exception> R time(final String metricName,
                                          final CheckedSupplier<R, E> supplier,
-                                         final String... tags) throws E {
+                                         final Tags tags) throws E {
     return time(metricName, supplier, null, null, tags);
   }
 }

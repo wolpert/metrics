@@ -31,13 +31,10 @@ import javax.inject.Singleton;
 @Module(includes = MetricsModule.Binder.class)
 public class MetricsModule {
 
-
   /**
    * Optional default tags to use.
    */
   public static final String PROVIDED_DEFAULT_METRIC_TAGS = "Provided default metric tags";
-
-
 
   /**
    * Default modules, using simply meter registry.
@@ -66,7 +63,6 @@ public class MetricsModule {
    */
   @Module
   public interface Binder {
-
 
     /**
      * Set your default tags if you want.
