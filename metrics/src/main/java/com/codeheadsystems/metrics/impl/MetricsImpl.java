@@ -41,6 +41,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
   private Tags tags;
+  private int openCount = 0;
 
   /**
    * Default constructor.
@@ -65,11 +66,34 @@ public class MetricsImpl implements AutoCloseable, Metrics {
     tags = new Tags(tagsSupplier.get());
   }
 
+  /**
+   * Used for metrics counting.
+   */
+  public void open() {
+    openCount++;
+    LOGGER.trace("open() {}", openCount);
+  }
+
+  /**
+   * Resets the tags and open count.
+   */
+  public void reset() {
+    openCount = 0;
+    tags = new Tags(tagsSupplier.get());
+    try {
+      metricPublisher.close();
+    } catch (Exception e) {
+      LOGGER.error("Error closing metricPublisher", e);
+    }
+  }
+
   @Override
   public void close() throws Exception {
-    LOGGER.info("close()");
-    metricPublisher.close();
-    tags = new Tags(tagsSupplier.get());
+    openCount--;
+    LOGGER.trace("close() {}", openCount);
+    if (openCount < 1) {
+      reset();
+    }
   }
 
   /**
