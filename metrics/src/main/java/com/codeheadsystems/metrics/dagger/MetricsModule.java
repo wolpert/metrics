@@ -16,12 +16,10 @@
 
 package com.codeheadsystems.metrics.dagger;
 
+import com.codeheadsystems.metrics.Tags;
 import dagger.BindsOptionalOf;
 import dagger.Module;
 import dagger.Provides;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.Optional;
 import java.util.function.Supplier;
 import javax.inject.Named;
@@ -35,52 +33,18 @@ import org.slf4j.LoggerFactory;
 @Module(includes = MetricsModule.Binder.class)
 public class MetricsModule {
 
-  /**
-   * Identifier for clients to supply their own registry via dagger.
-   */
-  public static final String PROVIDED_METER_REGISTRY = "Provided Meter Registry";
 
   /**
    * Optional default tags to use.
    */
   public static final String PROVIDED_DEFAULT_METRIC_TAGS = "Provided default metric tags";
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MetricsModule.class);
 
-  private final MeterRegistry override;
 
   /**
    * Default modules, using simply meter registry.
    */
   public MetricsModule() {
-    this(null);
-  }
-
-  /**
-   * Module where the client provides the registry.
-   *
-   * @param override registry to use.
-   */
-  public MetricsModule(final MeterRegistry override) {
-    this.override = override;
-  }
-
-  /**
-   * Gets the registry for the client via dagger.
-   *
-   * @param optionalMeterRegistry if we bound one via dagger, it comes here.
-   * @return the registry.
-   */
-  @Provides
-  @Singleton
-  public MeterRegistry meterRegistry(@Named(PROVIDED_METER_REGISTRY) Optional<MeterRegistry> optionalMeterRegistry) {
-    LOGGER.info("Provided metric: {}", optionalMeterRegistry.isPresent());
-    if (override != null) {
-      LOGGER.info("Override: {}", override);
-      return override;
-    } else {
-      return optionalMeterRegistry.orElseGet(SimpleMeterRegistry::new);
-    }
   }
 
   /**
@@ -105,14 +69,6 @@ public class MetricsModule {
   @Module
   public interface Binder {
 
-    /**
-     * Optional one you can declare with this namespace.
-     *
-     * @return the registry, if set.
-     */
-    @Named(PROVIDED_METER_REGISTRY)
-    @BindsOptionalOf
-    MeterRegistry meterRegistry();
 
     /**
      * Set your default tags if you want.

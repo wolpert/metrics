@@ -11,7 +11,6 @@ plugins {
 dependencies {
     implementation(project(":metrics"))
     implementation(libs.bundles.testing)
-    implementation(libs.micrometer.core)
     implementation(libs.dagger) // Common files for runtime
     annotationProcessor(libs.dagger.compiler)
     implementation(libs.metrics.core)

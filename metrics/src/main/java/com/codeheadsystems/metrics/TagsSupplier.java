@@ -1,30 +1,11 @@
 package com.codeheadsystems.metrics;
 
-import io.micrometer.core.instrument.Tags;
+import java.util.function.Supplier;
 
 /**
- * A supplier for tags given the object in question. Example, an HTTP response object
- * could supply tags using data from the response.
+ * A supplier for tags. This is a convince class.
  */
 @FunctionalInterface
-public interface TagsSupplier<T> {
+public interface TagsSupplier extends Supplier<Tags> {
 
-  /**
-   * Get the tags for the object.
-   *
-   * @param object to get tags for.
-   * @return tags.
-   */
-  Tags from(T object);
-
-  /**
-   * Starting with the tags gen, will add the tags as received from the object.
-   *
-   * @param object      tags to get from the object.
-   * @param initialTags base tags
-   * @return aggregated tags.
-   */
-  default Tags from(final T object, final Tags initialTags) {
-    return initialTags.and(from(object));
-  }
 }

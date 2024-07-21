@@ -16,43 +16,43 @@
 
 package com.codeheadsystems.metrics;
 
-import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tag;
-import io.micrometer.core.instrument.Tags;
-import io.micrometer.core.instrument.Timer;
+import com.codeheadsystems.metrics.impl.MetricImpl;
+import java.time.Duration;
 import java.util.function.Supplier;
-import javax.inject.Inject;
-import javax.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides helper methods for micrometer metrics.
+ * Note that this version does not allow nesting of metrics usage.
  */
-@Singleton
-public class Metrics {
+public class Metrics implements AutoCloseable {
 
-  private final MeterRegistry registry;
+  private static final Logger LOGGER = LoggerFactory.getLogger(Metrics.class);
 
-  private final ThreadLocal<Tags> tagThreadLocal;
+  private final MetricImpl metricImpl;
+  private final TagsSupplier tagsSupplier;
+  private Tags tags;
 
   /**
    * Default constructor.
    *
-   * @param registry    to use.
+   * @param metricImpl  the metric implementation.
    * @param defaultTags if available.
    */
-  @Inject
-  public Metrics(final MeterRegistry registry,
-                 final Supplier<Tags> defaultTags) {
-    this.registry = registry;
-    tagThreadLocal = ThreadLocal.withInitial(defaultTags::get);
+  public Metrics(final MetricImpl metricImpl,
+                 final TagsSupplier defaultTags) {
+    LOGGER.info("Metrics({},{})", metricImpl, defaultTags);
+    this.metricImpl = metricImpl;
+    this.tagsSupplier = defaultTags;
+    tags = new Tags(tagsSupplier.get());
   }
 
-  /**
-   * Closes the tags/resets.
-   */
-  public void close() {
-    tagThreadLocal.set(Tags.empty());
+  @Override
+  public void close() throws Exception {
+    LOGGER.info("close()");
+    metricImpl.close();
+    tags = new Tags(tagsSupplier.get());
   }
 
   /**
@@ -61,152 +61,99 @@ public class Metrics {
    * @return tags. tags
    */
   public Tags getTags() {
-    return tagThreadLocal.get();
+    return tags;
+  }
+
+  /**
+   * Adds the thread local tags here.
+   * overrideTags
+   *
+   * @param overrideTags to add.
+   */
+  public Tags and(final Tags overrideTags) {
+    getTags().add(overrideTags);
+    return tags;
   }
 
   /**
    * Adds the thread local tags here.
    *
-   * @param tags to add.
+   * @param overrideTags to add.
    */
-  public void and(final Tags tags) {
-    tagThreadLocal.set(getTags().and(tags));
+  public Tags and(final String... overrideTags) {
+    getTags().add(overrideTags);
+    return tags;
   }
 
   /**
-   * Adds the thread local tags here.
+   * Increments the metric with the value.
    *
-   * @param tag to add.
+   * @param metricName to increment.
+   * @param value      the value to add.
+   * @param tags       to use, if any.
    */
-  public void and(final Tag tag) {
-    tagThreadLocal.set(getTags().and(tag));
+  public void increment(final String metricName, final long value, final String... tags) {
+    final Tags aggregateTags = getTags().from(tags);
+    metricImpl.increment(metricName, value, aggregateTags);
   }
 
   /**
-   * Adds the thread local tags here.
+   * Times the action in the supplier.
    *
-   * @param tags to add.
+   * @param metricName                to store the time.
+   * @param supplier                  which is called to get the result.
+   * @param tagsGeneratorForResult    optional generator for tags based on the result.
+   * @param tagsGeneratorForThrowable optional tag generator for any thrown exception.
+   * @param tags                      optional tags you may want to include.
+   * @param <R>                       the type of result from the supplier.
+   * @param <E>                       the exception the supplier can throw.
+   * @return the result of the supplier.
+   * @throws E if the supplier throws an exception.
    */
-  public void and(final String... tags) {
-    tagThreadLocal.set(getTags().and(tags));
-  }
-
-  /**
-   * Getter for the registry.
-   *
-   * @return registry. meter registry
-   */
-  public MeterRegistry registry() {
-    return registry;
-  }
-
-  /**
-   * Returns a counter with the default tags.
-   *
-   * @param name counter.
-   * @return the counter.
-   */
-  public Counter counter(final String name) {
-    return registry.counter(name, getTags());
-  }
-
-  /**
-   * Returns a counter with the default tags and the tags you give it.
-   *
-   * @param name       counter.
-   * @param customTags the custom tags.
-   * @return the counter.
-   */
-  public Counter counter(final String name, final Tags customTags) {
-    return registry.counter(name, getTags().and(customTags));
-  }
-
-  /**
-   * Times the supplier setting up metric based on the name.
-   *
-   * @param <R>      type of thing.
-   * @param name     for metrics.
-   * @param supplier to return the thing.
-   * @return thing we did.
-   */
-  public <R> R time(final String name, final Supplier<R> supplier) {
-    return time(name, registry.timer(name, getTags()), supplier);
-  }
-
-  /**
-   * Times the supplier setting up metric based on the name.
-   *
-   * @param <R>        type of thing.
-   * @param name       for metrics.
-   * @param customTags the custom tags.
-   * @param supplier   to return the thing.
-   * @return thing we did.
-   */
-  public <R> R time(final String name, final Tags customTags, final Supplier<R> supplier) {
-    return time(name, customTags, registry.timer(name, getTags().and(customTags)), supplier);
-  }
-
-  /**
-   * Helper method to time a request and include the success counters.
-   *
-   * @param <R>      type of thing.
-   * @param name     for metrics.
-   * @param timer    Timer to use.
-   * @param supplier to return the thing.
-   * @return thing we did.
-   */
-  public <R> R time(final String name,
-                    final Timer timer,
-                    final Supplier<R> supplier) {
-    final Counter success = counter(name, Tags.of("success", "true"));
-    final Counter failure = counter(name, Tags.of("success", "false"));
-    return time(timer, success, failure, supplier);
-  }
-
-  /**
-   * Helper method to time a request and include the success counters.
-   *
-   * @param <R>        type of thing.
-   * @param name       for metrics.
-   * @param customTags the custom tags.
-   * @param timer      Timer to use.
-   * @param supplier   to return the thing.
-   * @return thing we did.
-   */
-  public <R> R time(final String name,
-                    final Tags customTags,
-                    final Timer timer,
-                    final Supplier<R> supplier) {
-    final Counter success = counter(name, customTags.and("success", "true"));
-    final Counter failure = counter(name, customTags.and("success", "false"));
-    return time(timer, success, failure, supplier);
-  }
-
-
-  /**
-   * Helper method to time a request and include the success counters.
-   *
-   * @param <R>      type of thing.
-   * @param timer    Timer to use.
-   * @param success  metric.
-   * @param failure  metric.
-   * @param supplier to return the thing.
-   * @return thing we did.
-   */
-  public <R> R time(final Timer timer,
-                    final Counter success,
-                    final Counter failure,
-                    final Supplier<R> supplier) {
+  public <R, E extends Exception> R time(final String metricName,
+                                         final CheckedSupplier<R, E> supplier,
+                                         final TagsGenerator<R> tagsGeneratorForResult,
+                                         final TagsGenerator<Throwable> tagsGeneratorForThrowable,
+                                         final String... tags) throws E {
+    final Tags aggregateTags = getTags().from(tags);
+    final long start = System.nanoTime();
+    long endDuration = 0;
     try {
-      final R result = timer.record(supplier);
-      success.increment(1);
-      failure.increment(0);
-      return result;
-    } catch (RuntimeException re) {
-      success.increment(0);
-      failure.increment(1);
-      throw re;
+      final R r = supplier.get();
+      endDuration = System.nanoTime();
+      if (tagsGeneratorForResult != null) {
+        aggregateTags.add(tagsGeneratorForResult.from(r));
+      }
+      return r;
+    } catch (final Throwable e) {
+      endDuration = System.nanoTime();
+      if (tagsGeneratorForThrowable != null) {
+        aggregateTags.add(tagsGeneratorForThrowable.from(e));
+      }
+      throw e;
+    } finally {
+      final long duration = endDuration - start;
+      metricImpl.time(metricName, Duration.ofNanos(duration), aggregateTags);
     }
   }
 
+  /**
+   * Times the action in the supplier.
+   *
+   * @param metricName                to store the time.
+   * @param supplier                  which is called to get the result.
+   * @param tagsGeneratorForResult    optional generator for tags based on the result.
+   * @param tagsGeneratorForThrowable optional tag generator for any thrown exception.
+   * @param tags                      optional tags you may want to include.
+   * @param <R>                       the type of result from the supplier.
+   * @return the result of the supplier.
+   */
+  public <R> R time(final String metricName,
+                    final Supplier<R> supplier,
+                    final TagsGenerator<R> tagsGeneratorForResult,
+                    final TagsGenerator<Throwable> tagsGeneratorForThrowable,
+                    final String... tags) {
+    final CheckedSupplier<R, RuntimeException> checkedSupplier = supplier::get;
+    return this.time(metricName, checkedSupplier, tagsGeneratorForResult, tagsGeneratorForThrowable, tags);
+  }
 }

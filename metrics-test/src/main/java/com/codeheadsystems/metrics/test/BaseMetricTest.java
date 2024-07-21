@@ -16,17 +16,9 @@
 
 package com.codeheadsystems.metrics.test;
 
-import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Reporter;
-import com.codahale.metrics.Slf4jReporter;
 import com.codeheadsystems.metrics.Metrics;
-import com.codeheadsystems.metrics.helper.DropwizardMetricsHelper;
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Tags;
-import java.io.IOException;
-import java.util.concurrent.TimeUnit;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
+import com.codeheadsystems.metrics.Tags;
+import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import org.junit.jupiter.api.BeforeEach;
 
 /**
@@ -35,47 +27,15 @@ import org.junit.jupiter.api.BeforeEach;
 public abstract class BaseMetricTest {
 
   /**
-   * The constant meterRegistry.
-   */
-  protected static MeterRegistry meterRegistry;
-  /**
-   * The constant reporter.
-   */
-  protected static Reporter reporter;
-  /**
    * The Metrics.
    */
   protected Metrics metrics;
-
-  /**
-   * Sets drop wizard.
-   */
-  @BeforeAll
-  protected static void setupDropWizard() {
-    final MetricRegistry metricRegistry = new MetricRegistry();
-    reporter = Slf4jReporter.forRegistry(metricRegistry)
-        .convertRatesTo(TimeUnit.SECONDS)
-        .convertDurationsTo(TimeUnit.MILLISECONDS)
-        .build();
-    meterRegistry = new DropwizardMetricsHelper().instrument(metricRegistry);
-  }
-
-  /**
-   * Report.
-   *
-   * @throws IOException the io exception
-   */
-  @AfterAll
-  protected static void report() throws IOException {
-    reporter.close();
-  }
 
   /**
    * Sets metrics.
    */
   @BeforeEach
   protected void setupMetrics() {
-    metrics = new Metrics(meterRegistry, Tags::empty);
+    metrics = new Metrics(new NullMetricsImpl(), Tags::new);
   }
-
 }

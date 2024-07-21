@@ -8,15 +8,12 @@ plugins {
 }
 
 dependencies {
-    implementation(libs.micrometer.core)
-    implementation(libs.metrics.core)
     implementation(libs.slf4j.api)
     implementation(libs.dagger)
     annotationProcessor(libs.dagger.compiler)
 
     testImplementation(libs.bundles.testing)
     testRuntimeOnly(libs.junit.platform.launcher)
-    testImplementation(libs.bundles.log4j)
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
