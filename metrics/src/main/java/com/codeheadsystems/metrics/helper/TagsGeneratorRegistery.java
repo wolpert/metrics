@@ -53,9 +53,9 @@ public class TagsGeneratorRegistery {
   /**
    * Helper method to aggregate tags if they exist in the registry.
    *
-   * @param existingTags
-   * @param object
-   * @param <R>
+   * @param existingTags to aggregate to.
+   * @param object       to get the tags from.
+   * @param <R>          the type.
    */
   public <R> void aggregateIfFound(final Tags existingTags, final R object) {
     Class<R> clazz = (Class<R>) object.getClass();
