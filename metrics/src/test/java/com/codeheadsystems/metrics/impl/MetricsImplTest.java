@@ -1,11 +1,14 @@
-package com.codeheadsystems.metrics;
+package com.codeheadsystems.metrics.impl;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.codeheadsystems.metrics.impl.MetricImpl;
+import com.codeheadsystems.metrics.MetricPublisher;
+import com.codeheadsystems.metrics.Tags;
+import com.codeheadsystems.metrics.TagsGenerator;
+import com.codeheadsystems.metrics.helper.TagsGeneratorRegistery;
 import java.time.Clock;
 import java.time.Duration;
 import org.junit.jupiter.api.BeforeEach;
@@ -15,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class MetricsTest {
+class MetricsImplTest {
 
   private static final String METRIC_NAME = "name";
   private static final Tags DEFAULT_TAGS = new Tags("a", "1", "b", "2");
@@ -28,54 +31,60 @@ class MetricsTest {
   private static final TagsGenerator<Object> TAGS_GENERATOR_RESULT = object -> RESULT_TAGS;
   private static final TagsGenerator<Throwable> TAGS_GENERATOR_ERROR = object -> ERROR_TAGS;
 
-  @Mock private MetricImpl metricImpl;
+  @Mock private MetricPublisher metricPublisher;
   @Mock private Clock clock;
+  @Mock private TagsGeneratorRegistery tagsGeneratorRegistery;
 
-  private Metrics metrics;
+  private MetricsImpl metricsImpl;
 
   @BeforeEach
   void setUp() {
-    metrics = new Metrics(clock, metricImpl, () -> DEFAULT_TAGS);
+    metricsImpl = new MetricsImpl(
+        clock,
+        metricPublisher,
+        () -> DEFAULT_TAGS,
+        null,
+        null);
   }
 
   @Test
   void testAnd() {
-    metrics.and(OVERRIDE_TAGS);
-    assertThat(metrics.getTags())
+    metricsImpl.and(OVERRIDE_TAGS);
+    assertThat(metricsImpl.getTags())
         .isEqualTo(COMBINED_TAGS);
   }
 
   @Test
   void close() throws Exception {
-    metrics.and(OVERRIDE_TAGS);
-    metrics.close();
-    assertThat(metrics.getTags())
+    metricsImpl.and(OVERRIDE_TAGS);
+    metricsImpl.close();
+    assertThat(metricsImpl.getTags())
         .isEqualTo(DEFAULT_TAGS);
-    verify(metricImpl).close();
+    verify(metricPublisher).close();
   }
 
   @Test
   void addArray() {
-    metrics.and(OVERRIDE_ARRAY);
-    assertThat(metrics.getTags())
+    metricsImpl.and(OVERRIDE_ARRAY);
+    assertThat(metricsImpl.getTags())
         .isEqualTo(COMBINED_TAGS);
   }
 
   @Test
   void testIncrement() {
-    metrics.increment(METRIC_NAME, 1L, OVERRIDE_ARRAY);
-    verify(metricImpl)
+    metricsImpl.increment(METRIC_NAME, 1L, OVERRIDE_ARRAY);
+    verify(metricPublisher)
         .increment(METRIC_NAME, 1L, COMBINED_TAGS);
-    assertThat(metrics.getTags())
+    assertThat(metricsImpl.getTags())
         .isEqualTo(DEFAULT_TAGS);
   }
 
   @Test
   void time_base() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethod);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethod);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS);
     assertThat(result).isEqualTo(RESULT);
   }
@@ -83,9 +92,9 @@ class MetricsTest {
   @Test
   void time_base_hardcodedMethod() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, () -> RESULT);
+    final Object result = metricsImpl.time(METRIC_NAME, () -> RESULT);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS);
     assertThat(result).isEqualTo(RESULT);
   }
@@ -93,9 +102,9 @@ class MetricsTest {
   @Test
   void time_manualTags() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethod, "something", "else");
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethod, "something", "else");
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from("something", "else"));
     assertThat(result).isEqualTo(RESULT);
   }
@@ -103,9 +112,9 @@ class MetricsTest {
   @Test
   void time_moreManualTags() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethod, "something", "else", "another", "tag");
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethod, "something", "else", "another", "tag");
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from("something", "else", "another", "tag"));
     assertThat(result).isEqualTo(RESULT);
   }
@@ -113,9 +122,9 @@ class MetricsTest {
   @Test
   void time_baseException() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethodWithExceptionDefined);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionDefined);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS);
     assertThat(result).isEqualTo(RESULT);
   }
@@ -124,20 +133,20 @@ class MetricsTest {
   void time_baseWithException() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
-        .isThrownBy(() -> metrics.time(METRIC_NAME, this::testMethodWithExceptionThrown));
+        .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown));
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS);
   }
 
   @Test
   void time_baseWithException_defaultHandler() throws SomeException {
-    metrics = new Metrics(clock, metricImpl, () -> DEFAULT_TAGS, TAGS_GENERATOR_ERROR);
+    metricsImpl = new MetricsImpl(clock, metricPublisher, () -> DEFAULT_TAGS, TAGS_GENERATOR_ERROR, null);
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
-        .isThrownBy(() -> metrics.time(METRIC_NAME, this::testMethodWithExceptionThrown));
+        .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown));
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from(ERROR_TAGS));
   }
 
@@ -145,9 +154,9 @@ class MetricsTest {
   @Test
   void time_withTags() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethod, OVERRIDE_ARRAY);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethod, OVERRIDE_ARRAY);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
     assertThat(result).isEqualTo(RESULT);
   }
@@ -155,9 +164,9 @@ class MetricsTest {
   @Test
   void time_baseException_withTags() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethodWithExceptionDefined, OVERRIDE_ARRAY);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionDefined, OVERRIDE_ARRAY);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
     assertThat(result).isEqualTo(RESULT);
   }
@@ -166,18 +175,18 @@ class MetricsTest {
   void time_baseWithException_withTags() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
-        .isThrownBy(() -> metrics.time(METRIC_NAME, this::testMethodWithExceptionThrown, OVERRIDE_ARRAY));
+        .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown, OVERRIDE_ARRAY));
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
   }
 
   @Test
   void time_baseException_withTagGenerator() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethodWithExceptionDefined, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionDefined, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from(RESULT_TAGS));
     assertThat(result).isEqualTo(RESULT);
   }
@@ -186,18 +195,18 @@ class MetricsTest {
   void time_baseWithException_withGenerator() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
-        .isThrownBy(() -> metrics.time(METRIC_NAME, this::testMethodWithExceptionThrown, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR));
+        .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR));
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from(ERROR_TAGS));
   }
 
   @Test
   void time_baseException_withTagGenerator_andOverrideTags() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
-    final Object result = metrics.time(METRIC_NAME, this::testMethodWithExceptionDefined, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR, OVERRIDE_ARRAY);
+    final Object result = metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionDefined, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR, OVERRIDE_ARRAY);
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS.from(RESULT_TAGS));
     assertThat(result).isEqualTo(RESULT);
   }
@@ -206,9 +215,9 @@ class MetricsTest {
   void time_baseWithException_withGenerator_andOverrideTags() throws SomeException {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
-        .isThrownBy(() -> metrics.time(METRIC_NAME, this::testMethodWithExceptionThrown, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR, OVERRIDE_ARRAY));
+        .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown, TAGS_GENERATOR_RESULT, TAGS_GENERATOR_ERROR, OVERRIDE_ARRAY));
 
-    verify(metricImpl)
+    verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS.from(ERROR_TAGS));
   }
 

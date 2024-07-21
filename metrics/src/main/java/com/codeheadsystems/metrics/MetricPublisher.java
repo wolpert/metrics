@@ -1,12 +1,11 @@
-package com.codeheadsystems.metrics.impl;
+package com.codeheadsystems.metrics;
 
-import com.codeheadsystems.metrics.Tags;
 import java.time.Duration;
 
 /**
  * A list of methods required to implement for any metric provider.
  */
-public interface MetricImpl extends AutoCloseable {
+public interface MetricPublisher extends AutoCloseable {
 
   /**
    * If you need to close the metric provider, do it here.
