@@ -14,7 +14,7 @@ dependencies {
     implementation(libs.slf4j.api)
     implementation(libs.micrometer.core)
 
-    //testImplementation(libs.logback.classic)
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
     testImplementation(libs.bundles.testing)
     testImplementation(libs.logback.classic)
 }
