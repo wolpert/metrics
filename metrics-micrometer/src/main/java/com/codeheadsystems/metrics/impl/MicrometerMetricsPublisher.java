@@ -11,12 +11,15 @@ import io.micrometer.core.instrument.util.HierarchicalNameMapper;
 import java.time.Duration;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The type Micrometer metrics publisher.
  */
 public class MicrometerMetricsPublisher implements MetricPublisher {
 
+  private static final Logger log = LoggerFactory.getLogger(MicrometerMetricsPublisher.class);
   private final MeterRegistry meterRegistry;
 
   /**
@@ -25,6 +28,7 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
    * @param meterRegistry The meter registry to use.
    */
   public MicrometerMetricsPublisher(final MeterRegistry meterRegistry) {
+    log.info("MicrometerMetricsPublisher({})", meterRegistry);
     this.meterRegistry = meterRegistry;
   }
 
@@ -39,6 +43,7 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
   public MicrometerMetricsPublisher(final MetricRegistry metricRegistry,
                                     final String prefix,
                                     final Clock clock) {
+    log.info("MicrometerMetricsPublisher({}, {}, {})", metricRegistry, prefix, clock);
     final DropwizardConfig config = new DropwizardConfig() {
       @Override
       public String prefix() {
@@ -60,11 +65,13 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
 
   @Override
   public void increment(final String metricName, final long value, final Tags tags) {
+    log.trace("increment({}, {}, {})", metricName, value, tags);
     meterRegistry.counter(metricName, convert(tags)).increment(value);
   }
 
   @Override
   public void time(final String metricName, final Duration duration, final Tags tags) {
+    log.trace("time({}, {}, {})", metricName, duration, tags);
     meterRegistry.timer(metricName, convert(tags)).record(duration);
   }
 
@@ -74,6 +81,5 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
         .collect(Collectors.toList());
     return io.micrometer.core.instrument.Tags.of(list);
   }
-
 
 }

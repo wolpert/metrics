@@ -10,10 +10,13 @@ plugins {
 
 dependencies {
     implementation(project(":metrics"))
-    implementation(libs.bundles.testing)
     implementation(libs.metrics.core)
     implementation(libs.slf4j.api)
     implementation(libs.micrometer.core)
+
+    //testImplementation(libs.logback.classic)
+    testImplementation(libs.bundles.testing)
+    testImplementation(libs.logback.classic)
 }
 
 // Apply a specific Java toolchain to ease working on different environments.
