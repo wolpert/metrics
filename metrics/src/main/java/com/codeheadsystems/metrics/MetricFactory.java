@@ -45,13 +45,6 @@ public class MetricFactory {
   }
 
   /**
-   * Reset, used as a way to clear out the metrics.
-   */
-  public void reset() {
-    metricsImplThreadLocal.get().reset();
-  }
-
-  /**
    * Returns this thread's instance. Note, you should use withMetrics if you can, as it manages the
    * count.
    *

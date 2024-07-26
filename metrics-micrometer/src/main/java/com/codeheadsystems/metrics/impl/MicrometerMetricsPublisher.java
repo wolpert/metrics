@@ -38,12 +38,10 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
    *
    * @param metricRegistry The dropwizard metric registry to use.
    * @param prefix         the prefix
-   * @param clock          The clock to use.
    */
   public MicrometerMetricsPublisher(final MetricRegistry metricRegistry,
-                                    final String prefix,
-                                    final Clock clock) {
-    log.info("MicrometerMetricsPublisher({}, {}, {})", metricRegistry, prefix, clock);
+                                    final String prefix) {
+    log.info("MicrometerMetricsPublisher({}, {}, {})", metricRegistry, prefix);
     final DropwizardConfig config = new DropwizardConfig() {
       @Override
       public String prefix() {
@@ -55,7 +53,7 @@ public class MicrometerMetricsPublisher implements MetricPublisher {
         return null;
       }
     };
-    this.meterRegistry = new DropwizardMeterRegistry(config, metricRegistry, HierarchicalNameMapper.DEFAULT, clock) {
+    this.meterRegistry = new DropwizardMeterRegistry(config, metricRegistry, HierarchicalNameMapper.DEFAULT, Clock.SYSTEM) {
       @Override
       protected Double nullGaugeValue() {
         return null;
