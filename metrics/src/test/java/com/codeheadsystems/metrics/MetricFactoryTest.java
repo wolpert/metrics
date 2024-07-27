@@ -33,7 +33,7 @@ class MetricFactoryTest {
   @Test
   void testDefault() {
     final MetricFactory metricFactory = MetricFactory.builder().build();
-    final Object result = metricFactory.withMetrics(metrics -> metrics.time("test", () -> "result"));
+    final Object result = metricFactory.with(metrics -> metrics.time("test", () -> "result"));
     assertThat(result).isEqualTo("result");
   }
 
@@ -43,7 +43,7 @@ class MetricFactoryTest {
         .withClock(clock)
         .withMetricPublisher(metricPublisher)
         .build();
-    final Object result = metricFactory.withMetrics(metrics -> metrics.time("test", () -> "result"));
+    final Object result = metricFactory.with(metrics -> metrics.time("test", () -> "result"));
     assertThat(result).isEqualTo("result");
     verify(clock, times(2)).millis();
     verify(metricPublisher).time("test", Duration.ofMillis(0), Tags.empty());
@@ -51,11 +51,11 @@ class MetricFactoryTest {
   }
 
   @Test
-  void testWithMetrics() throws Exception {
+  void testWith() throws Exception {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withMetricPublisher(metricPublisher)
         .withTags(BASE_TAGS).build();
-    final Boolean result = metricFactory.withMetrics(metrics -> metrics.time("test", () -> {
+    final Boolean result = metricFactory.with(metrics -> metrics.time("test", () -> {
       metrics.increment("test", 1L);
       boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
       metrics.and(ADDED_TAGS);
@@ -69,7 +69,7 @@ class MetricFactoryTest {
     verify(metricPublisher).increment("test", 2L, COMBINED_TAGS);
     verify(metricPublisher).time(eq("test"), any(), eq(BASE_TAGS));
     verify(metricPublisher).close();
-    final Boolean secondResult = metricFactory.withMetrics(metrics -> metrics.time("test", () -> {
+    final Boolean secondResult = metricFactory.with(metrics -> metrics.time("test", () -> {
       boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
       metrics.and(ADDED_TAGS);
       testResult = testResult && ((MetricsImpl) metricFactory.metrics()).getTags().equals(COMBINED_TAGS);
@@ -79,7 +79,7 @@ class MetricFactoryTest {
   }
 
   @Test
-  void testWithMetricsNester_defaultBehavior() throws Exception {
+  void testWithNester_defaultBehavior() throws Exception {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withTags(Tags.empty())
         .withMetricPublisher(metricPublisher).build();
@@ -87,7 +87,7 @@ class MetricFactoryTest {
   }
 
   @Test
-  void testWithMetricsNester_openCloseOnlyInitial() throws Exception {
+  void testWithNester_openCloseOnlyInitial() throws Exception {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withTags(Tags.empty())
         .withCloseAndOpenOnlyForInitial(true)
@@ -96,7 +96,7 @@ class MetricFactoryTest {
   }
 
   @Test
-  void testWithMetricsNester_openCloseAll() throws Exception {
+  void testWithNester_openCloseAll() throws Exception {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withTags(Tags.empty())
         .withCloseAndOpenOnlyForInitial(false)
@@ -105,9 +105,9 @@ class MetricFactoryTest {
   }
 
   void testNestedMetrics(MetricFactory metricFactory, int expectedTimes) throws Exception {
-    metricFactory.withMetrics(metrics -> { // outer
+    metricFactory.with(metrics -> { // outer
       metrics.time("outer", () -> {
-        metricFactory.withMetrics(innerMetrics -> { // inner
+        metricFactory.with(innerMetrics -> { // inner
           innerMetrics.increment("inner", 2L, ADDED_TAGS);
           return null;
         });

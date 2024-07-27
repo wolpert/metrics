@@ -3,6 +3,7 @@ package com.codeheadsystems.metrics;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import com.codeheadsystems.metrics.impl.MetricPublisher;
 import com.codeheadsystems.metrics.impl.MetricsImpl;
+import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import com.codeheadsystems.metrics.impl.NullMetricsPublisher;
 import java.time.Clock;
 import java.util.function.Function;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 public class MetricFactory {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricFactory.class);
+  private static final NullMetricsImpl NULL_METRICS = new NullMetricsImpl();
 
   private final Clock clock;
   private final MetricPublisher metricPublisher;
@@ -41,13 +43,18 @@ public class MetricFactory {
   }
 
   /**
-   * Returns this thread's instance. Note, you should use withMetrics if you can, as it manages the
-   * count.
+   * Returns this thread's instance.HOWEVER, if there is no instance, will return a null metrics to not blow up. Will
+   * create a log message under info that a null was used.
    *
    * @return the metrics
    */
   public Metrics metrics() {
-    return metricsImplThreadLocal.get();
+    final MetricsImpl metrics = metricsImplThreadLocal.get();
+    if (metrics == null) {
+      LOGGER.info("No metrics found, returning a null metrics");
+      return NULL_METRICS;
+    }
+    return metrics;
   }
 
   private MetricsImpl createMetrics(final Tags tags) {
@@ -61,7 +68,7 @@ public class MetricFactory {
    * @param function the function
    * @return the r
    */
-  public <R> R withMetrics(final Function<Metrics, R> function) {
+  public <R> R with(final Function<Metrics, R> function) {
     final MetricsImpl oldMetrics = metricsImplThreadLocal.get();
     final Tags oldTags = oldMetrics == null ? initialTags : oldMetrics.getTags();
     MetricsImpl metrics = null;
