@@ -20,7 +20,6 @@ import com.codeheadsystems.metrics.CheckedSupplier;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
-import com.codeheadsystems.metrics.TagsSupplier;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import java.time.Clock;
 import java.time.Duration;
@@ -37,38 +36,49 @@ public class MetricsImpl implements AutoCloseable, Metrics {
 
   private final Clock clock;
   private final MetricPublisher metricPublisher;
-  private final TagsSupplier tagsSupplier;
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
-  private Tags tags;
+  private final Tags tags;
 
   /**
    * Default constructor.
    *
    * @param clock                            the clock to use.
    * @param metricPublisher                  the metric implementation.
-   * @param defaultTags                      if available.
    * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
    * @param tagsGeneratorRegistry            to help with tags.
    */
   public MetricsImpl(final Clock clock,
                      final MetricPublisher metricPublisher,
-                     final TagsSupplier defaultTags,
                      final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable,
-                     final TagsGeneratorRegistry tagsGeneratorRegistry) {
+                     final TagsGeneratorRegistry tagsGeneratorRegistry,
+                     final Tags tags) {
+    LOGGER.info("MetricsImpl({},{})", metricPublisher, tags);
     this.clock = clock;
     this.tagsGeneratorRegistry = tagsGeneratorRegistry;
-    LOGGER.info("MetricsImpl({},{})", metricPublisher, defaultTags);
     this.metricPublisher = metricPublisher;
-    this.tagsSupplier = defaultTags;
+    this.tags = tags;
     this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable;
-    tags = new Tags(tagsSupplier.get());
+  }
+
+  /**
+   * Called when the metrics object is usable.
+   */
+  public void open() {
+    try {
+      metricPublisher.open();
+    } catch (Throwable e) {
+      LOGGER.warn("Metrics was unable to close", e);
+    }
   }
 
   @Override
-  public void close() throws Exception {
-    tags = new Tags(tagsSupplier.get());
-    metricPublisher.close();
+  public void close() {
+    try {
+      metricPublisher.close();
+    } catch (Throwable e) {
+      LOGGER.warn("Metrics was unable to close", e);
+    }
   }
 
   /**
@@ -130,10 +140,4 @@ public class MetricsImpl implements AutoCloseable, Metrics {
     }
   }
 
-  @Override
-  public <R, E extends Exception> R time(final String metricName,
-                                         final CheckedSupplier<R, E> supplier,
-                                         final Tags tags) throws E {
-    return time(metricName, supplier, null, null, tags);
-  }
 }

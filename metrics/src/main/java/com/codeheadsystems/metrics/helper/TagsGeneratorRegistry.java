@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Gives you the ability to register generators for tags.
+ * Gives you the ability to register generators for tags. Note that null objects will not generate
+ * any tags.
  */
 public class TagsGeneratorRegistry {
 
@@ -52,12 +53,16 @@ public class TagsGeneratorRegistry {
 
   /**
    * Helper method to aggregate tags if they exist in the registry.
+   * If the object is null, this won't do anything.
    *
    * @param existingTags to aggregate to.
    * @param object       to get the tags from.
    * @param <R>          the type.
    */
   public <R> void aggregateIfFound(final Tags existingTags, final R object) {
+    if (object == null) {
+      return;
+    }
     Class<R> clazz = (Class<R>) object.getClass();
     if (tagsGeneratorMap.containsKey(clazz)) {
       TagsGenerator<R> tagsGenerator = get(clazz);

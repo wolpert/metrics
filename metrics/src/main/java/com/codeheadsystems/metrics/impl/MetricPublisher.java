@@ -9,7 +9,13 @@ import java.time.Duration;
 public interface MetricPublisher extends AutoCloseable {
 
   /**
-   * If you need to close the metric provider, do it here.
+   * Called when the metric object is created in the current thread.
+   */
+  default void open() {
+  }
+
+  /**
+   * Called when the current metrics object is no longer in use.
    */
   @Override
   default void close() throws Exception {

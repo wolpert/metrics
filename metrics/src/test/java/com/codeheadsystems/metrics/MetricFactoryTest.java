@@ -1,11 +1,14 @@
 package com.codeheadsystems.metrics;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import com.codeheadsystems.metrics.impl.MetricPublisher;
+import com.codeheadsystems.metrics.impl.MetricsImpl;
 import java.time.Clock;
 import java.time.Duration;
 import org.junit.jupiter.api.Test;
@@ -15,6 +18,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 class MetricFactoryTest {
+
+  private static final Tags BASE_TAGS = new Tags("a", "1", "b", "2");
+  private static final Tags ADDED_TAGS = new Tags("b", "3", "c", "4");
+  private static final Tags COMBINED_TAGS = new Tags("a", "1", "b", "3", "c", "4");
+  private static final Tags THIRD_TAGS = new Tags("d", "5");
 
   @Mock private Clock clock;
   @Mock private MetricPublisher metricPublisher;
@@ -42,4 +50,52 @@ class MetricFactoryTest {
     verify(metricPublisher).close();
   }
 
+  @Test
+  void testWithMetrics() throws Exception {
+    final MetricFactory metricFactory = MetricFactory.builder()
+        .withMetricPublisher(metricPublisher)
+        .withTags(BASE_TAGS).build();
+    final Boolean result = metricFactory.withMetrics(metrics -> metrics.time("test", () -> {
+      metrics.increment("test", 1L);
+      boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
+      metrics.and(ADDED_TAGS);
+      metrics.increment("test", 2L);
+      testResult = testResult && ((MetricsImpl) metricFactory.metrics()).getTags().equals(COMBINED_TAGS);
+      return testResult;
+    }));
+    assertThat(result).isTrue();
+    verify(metricPublisher).open();
+    verify(metricPublisher).increment("test", 1L, BASE_TAGS);
+    verify(metricPublisher).increment("test", 2L, COMBINED_TAGS);
+    verify(metricPublisher).time(eq("test"), any(), eq(BASE_TAGS));
+    verify(metricPublisher).close();
+    final Boolean secondResult = metricFactory.withMetrics(metrics -> metrics.time("test", () -> {
+      boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
+      metrics.and(ADDED_TAGS);
+      testResult = testResult && ((MetricsImpl) metricFactory.metrics()).getTags().equals(COMBINED_TAGS);
+      return testResult;
+    }));
+    assertThat(secondResult).isTrue();
+  }
+
+  @Test
+  void testWithMetricsNester() throws Exception {
+    final MetricFactory metricFactory = MetricFactory.builder()
+        .withTags(Tags.empty())
+        .withMetricPublisher(metricPublisher).build();
+    metricFactory.withMetrics(metrics -> { // outer
+      metrics.time("outer", () -> {
+        metricFactory.withMetrics(innerMetrics -> { // inner
+          innerMetrics.increment("inner", 2L, ADDED_TAGS);
+          return null;
+        });
+        return null;
+      }, BASE_TAGS);
+      return null;
+    });
+    verify(metricPublisher, times(2)).open();
+    verify(metricPublisher).increment("inner", 2L, ADDED_TAGS);
+    verify(metricPublisher).time(eq("outer"), any(), eq(BASE_TAGS));
+    verify(metricPublisher, times(2)).close();
+  }
 }

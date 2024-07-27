@@ -52,6 +52,16 @@ public class Tags {
   /**
    * Returns a new Tags object with the tags provided.
    *
+   * @param tags to clone.
+   * @return new tags object.
+   */
+  public static Tags of(final Tags tags) {
+    return new Tags(tags);
+  }
+
+  /**
+   * Returns a new Tags object with the tags provided.
+   *
    * @return empty tags.
    */
   public static Tags empty() {
@@ -125,5 +135,10 @@ public class Tags {
   @Override
   public int hashCode() {
     return Objects.hashCode(tags);
+  }
+
+  @Override
+  public String toString() {
+    return "Tags{" + "tags=" + tags + '}';
   }
 }

@@ -41,9 +41,9 @@ class MetricsImplTest {
     metricsImpl = new MetricsImpl(
         clock,
         metricPublisher,
-        () -> DEFAULT_TAGS,
         null,
-        null);
+        null,
+        DEFAULT_TAGS);
   }
 
   @Test
@@ -140,7 +140,7 @@ class MetricsImplTest {
 
   @Test
   void time_baseWithException_defaultHandler() throws SomeException {
-    metricsImpl = new MetricsImpl(clock, metricPublisher, () -> DEFAULT_TAGS, TAGS_GENERATOR_ERROR, null);
+    metricsImpl = new MetricsImpl(clock, metricPublisher, TAGS_GENERATOR_ERROR, null, DEFAULT_TAGS);
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
         .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown));

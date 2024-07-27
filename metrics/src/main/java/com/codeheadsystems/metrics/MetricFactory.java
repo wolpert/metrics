@@ -18,30 +18,24 @@ public class MetricFactory {
 
   private final Clock clock;
   private final MetricPublisher metricPublisher;
-  private final TagsSupplier tagsSupplier;
+  private final Tags initialTags;
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
-
   private final ThreadLocal<MetricsImpl> metricsImplThreadLocal;
 
   private MetricFactory(final Builder builder) {
     this.clock = builder.clock;
     this.metricPublisher = builder.metricPublisher;
-    final Tags tags = builder.tags;
-    this.tagsSupplier = () -> tags;
+    this.initialTags = builder.tags;
     this.defaultTagsGeneratorForThrowable = builder.defaultTagsGeneratorForThrowable;
     this.tagsGeneratorRegistry = builder.tagsGeneratorRegistry;
-    this.metricsImplThreadLocal = ThreadLocal.withInitial(this::newInstance);
+    this.metricsImplThreadLocal = new ThreadLocal<>();
     LOGGER.info("MetricFactory({},{},{},{},{})",
-        clock, metricPublisher, tagsSupplier, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
+        clock, metricPublisher, initialTags, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
   }
 
   public static Builder builder() {
     return Builder.builder();
-  }
-
-  private MetricsImpl newInstance() {
-    return new MetricsImpl(clock, metricPublisher, tagsSupplier, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
   }
 
   /**
@@ -54,6 +48,10 @@ public class MetricFactory {
     return metricsImplThreadLocal.get();
   }
 
+  private MetricsImpl createMetrics(final Tags tags) {
+    return new MetricsImpl(clock, metricPublisher, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry, tags);
+  }
+
   /**
    * With metrics r.
    *
@@ -61,16 +59,15 @@ public class MetricFactory {
    * @param function the function
    * @return the r
    */
-  public <R> R withMetrics(Function<Metrics, R> function) {
-    final MetricsImpl metrics = metricsImplThreadLocal.get();
-    try {
+  public <R> R withMetrics(final Function<Metrics, R> function) {
+    final MetricsImpl oldMetrics = metricsImplThreadLocal.get();
+    final Tags oldTags = oldMetrics == null ? initialTags : oldMetrics.getTags();
+    try (MetricsImpl metrics = createMetrics(Tags.of(oldTags))) {
+      metricsImplThreadLocal.set(metrics);
+      metrics.open();
       return function.apply(metrics);
     } finally {
-      try {
-        metrics.close();
-      } catch (Throwable e) {
-        LOGGER.warn("Metrics was unable to close", e);
-      }
+      metricsImplThreadLocal.set(oldMetrics);
     }
   }
 
