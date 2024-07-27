@@ -90,3 +90,43 @@ public class AClassTest extends BaseMetricTest {
   }
 }
 ```
+
+## FAQ
+
+### Why not traces?
+
+When people say traces, they mean implementations based on the open-source
+jaeger project by uber. Traces are really great and for any service that with
+real TPS (greater than 1k) generates lots of data... so much so that you 
+don't keep the traces over the long haul because it is simply too much data.
+
+But the advantage of traces is you can grab a bunch of data, use that data
+to inject metrics and then sample the traces for debugging your system instead
+of logs. Traces/spans that remain are complete; meaning that they represent one
+call through your stack from ingestion. If you just sample logs directly, you
+cannot be sure that a request in service one calling service two will have logs
+from both services.
+
+The best trace solutions are proprietary and expensive. And what I learned at
+Amazon, if your service is 32k TPS, no one really looks at logs or traces anyways.
+It's better to have a great metrics solution. So traces are good for mid-levels, 
+not small services which need logs, or large services which need to simplify
+storage management. That is what this code base aims to do.
+
+### How about metric files like Amazon used to do internally?
+
+At amazon before cloudwatch, the internal metric service would 'write to disk'
+metric results per service request when writing microservices. This metric output
+would contain all metrics generated in that request. A separate process would read
+these files and publish the results to the metric backend. This reduced any 
+overhead of the service calling a metrics backend at the cost of files on disk.
+(Similar to how traces are actually done today.) If you use cloudwatch, this is akin
+to using 'metric filters' which scan your logs for metrics to publish. Cheaper than 
+if you call the metrics service directly even in batches. And of course, you are less
+likely to lose data if the service shutdown. (Not totally true in the old system.)
+
+I plan on created a metric publisher for this project that will use the old Amazon
+style, but this is low priority. If you use prometheus, you are pretty close to
+doing this anyways... which honestly is the preferred approach. But because folks
+may want different connectors, this is an easy method to add them instead of making
+publishers in java. (And yes... eventually this library will be in multiple languages.)
