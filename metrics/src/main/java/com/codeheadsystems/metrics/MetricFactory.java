@@ -21,6 +21,7 @@ public class MetricFactory {
   private final Tags initialTags;
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
+  private final Boolean closeAndOpenOnlyForInitial;
   private final ThreadLocal<MetricsImpl> metricsImplThreadLocal;
 
   private MetricFactory(final Builder builder) {
@@ -29,6 +30,7 @@ public class MetricFactory {
     this.initialTags = builder.tags;
     this.defaultTagsGeneratorForThrowable = builder.defaultTagsGeneratorForThrowable;
     this.tagsGeneratorRegistry = builder.tagsGeneratorRegistry;
+    this.closeAndOpenOnlyForInitial = builder.closeAndOpenOnlyForInitial;
     this.metricsImplThreadLocal = new ThreadLocal<>();
     LOGGER.info("MetricFactory({},{},{},{},{})",
         clock, metricPublisher, initialTags, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
@@ -62,11 +64,22 @@ public class MetricFactory {
   public <R> R withMetrics(final Function<Metrics, R> function) {
     final MetricsImpl oldMetrics = metricsImplThreadLocal.get();
     final Tags oldTags = oldMetrics == null ? initialTags : oldMetrics.getTags();
-    try (MetricsImpl metrics = createMetrics(Tags.of(oldTags))) {
+    MetricsImpl metrics = null;
+    try {
+      metrics = createMetrics(Tags.of(oldTags));
       metricsImplThreadLocal.set(metrics);
-      metrics.open();
+      if (!closeAndOpenOnlyForInitial || oldMetrics == null) {
+        metrics.open();
+      }
       return function.apply(metrics);
     } finally {
+      if (!closeAndOpenOnlyForInitial || oldMetrics == null) {
+        if (metrics != null) {
+          metrics.close();
+        } else {
+          LOGGER.error("[BUG] Metrics was not created, unable to close");
+        }
+      }
       metricsImplThreadLocal.set(oldMetrics);
     }
   }
@@ -85,6 +98,7 @@ public class MetricFactory {
     private MetricPublisher metricPublisher = new NullMetricsPublisher();
     private TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
     private TagsGeneratorRegistry tagsGeneratorRegistry = new TagsGeneratorRegistry();
+    private Boolean closeAndOpenOnlyForInitial = true;
 
     private Builder() {
     }
@@ -97,6 +111,18 @@ public class MetricFactory {
     public static Builder builder() {
       LOGGER.info("MetricFactory.Builder()");
       return new Builder();
+    }
+
+    /**
+     * With clock builder.
+     *
+     * @param closeAndOpenOnlyForInitial the clock
+     * @return the builder
+     */
+    public Builder withCloseAndOpenOnlyForInitial(final Boolean closeAndOpenOnlyForInitial) {
+      LOGGER.info("withCloseAndOpenOnlyForInitial({})", closeAndOpenOnlyForInitial);
+      this.closeAndOpenOnlyForInitial = closeAndOpenOnlyForInitial;
+      return this;
     }
 
     /**

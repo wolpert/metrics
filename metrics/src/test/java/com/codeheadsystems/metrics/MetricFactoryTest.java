@@ -79,10 +79,32 @@ class MetricFactoryTest {
   }
 
   @Test
-  void testWithMetricsNester() throws Exception {
+  void testWithMetricsNester_defaultBehavior() throws Exception {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withTags(Tags.empty())
         .withMetricPublisher(metricPublisher).build();
+    testNestedMetrics(metricFactory, 1);
+  }
+
+  @Test
+  void testWithMetricsNester_openCloseOnlyInitial() throws Exception {
+    final MetricFactory metricFactory = MetricFactory.builder()
+        .withTags(Tags.empty())
+        .withCloseAndOpenOnlyForInitial(true)
+        .withMetricPublisher(metricPublisher).build();
+    testNestedMetrics(metricFactory, 1);
+  }
+
+  @Test
+  void testWithMetricsNester_openCloseAll() throws Exception {
+    final MetricFactory metricFactory = MetricFactory.builder()
+        .withTags(Tags.empty())
+        .withCloseAndOpenOnlyForInitial(false)
+        .withMetricPublisher(metricPublisher).build();
+    testNestedMetrics(metricFactory, 2);
+  }
+
+  void testNestedMetrics(MetricFactory metricFactory, int expectedTimes) throws Exception {
     metricFactory.withMetrics(metrics -> { // outer
       metrics.time("outer", () -> {
         metricFactory.withMetrics(innerMetrics -> { // inner
@@ -93,9 +115,9 @@ class MetricFactoryTest {
       }, BASE_TAGS);
       return null;
     });
-    verify(metricPublisher, times(2)).open();
+    verify(metricPublisher, times(expectedTimes)).open();
     verify(metricPublisher).increment("inner", 2L, ADDED_TAGS);
     verify(metricPublisher).time(eq("outer"), any(), eq(BASE_TAGS));
-    verify(metricPublisher, times(2)).close();
+    verify(metricPublisher, times(expectedTimes)).close();
   }
 }
