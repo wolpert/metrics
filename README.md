@@ -66,7 +66,7 @@ public class AClass {
   }
 
   public boolean howSoonIsNow() {
-    metricsFactory.withMetrics(metrics ->
+    metricsFactory.with(metrics ->
         metrics.time("MetricName", () -> {
           internalMethod();
           return System.currentTimeMillis() > 1000;
