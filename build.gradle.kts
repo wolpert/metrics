@@ -20,4 +20,7 @@ allprojects {
         maven("https://oss.sonatype.org/content/repositories/releases/")
         maven("https://s3-us-west-2.amazonaws.com/dynamodb-local/release/")
     }
+
+    // publish
+    // gradle publishToSonatype closeAndReleaseSonatypeStagingRepository
 }
