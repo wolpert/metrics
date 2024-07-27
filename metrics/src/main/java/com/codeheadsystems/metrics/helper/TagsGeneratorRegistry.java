@@ -47,6 +47,7 @@ public class TagsGeneratorRegistry {
    * @param <R>   the type.
    * @return tags generator.
    */
+  @SuppressWarnings("unchecked")
   public <R> TagsGenerator<R> get(final Class<R> clazz) {
     return (TagsGenerator<R>) tagsGeneratorMap.get(clazz);
   }
