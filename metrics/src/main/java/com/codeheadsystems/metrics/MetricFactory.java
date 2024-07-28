@@ -6,6 +6,7 @@ import com.codeheadsystems.metrics.impl.MetricsImpl;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import com.codeheadsystems.metrics.impl.NullMetricsPublisher;
 import java.time.Clock;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,7 @@ import org.slf4j.LoggerFactory;
 /**
  * Provides a way to manage metrics from threads.
  */
-public class MetricFactory {
+public class MetricFactory implements Metrics {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(MetricFactory.class);
   private static final NullMetricsImpl NULL_METRICS = new NullMetricsImpl();
@@ -94,7 +95,11 @@ public class MetricFactory {
     if (!closeAndOpenOnlyForInitial || metricsContext.oldMetrics == null) {
       metricsContext.currentMetrics.close();
     }
-    metricsImplThreadLocal.set(metricsContext.oldMetrics);
+    if (metricsContext.oldMetrics == null) {
+      metricsImplThreadLocal.remove();
+    } else {
+      metricsImplThreadLocal.set(metricsContext.oldMetrics);
+    }
   }
 
   /**
@@ -112,6 +117,64 @@ public class MetricFactory {
       disableMetricsContext(metricsContext);
     }
   }
+
+  @Override
+  public void increment(final String metricName, final long value, final Tags tags) {
+    if (metricsImplThreadLocal.get() != null) {
+      metrics().increment(metricName, value, tags);
+    } else {
+      with(metrics -> {
+        metrics.increment(metricName, value, tags);
+        return null;
+      });
+    }
+  }
+
+  @Override
+  public Tags and(final Tags overrideTags) {
+    if (metricsImplThreadLocal.get() != null) {
+      return metrics().and(overrideTags);
+    } else {
+      return Tags.empty();
+    }
+  }
+
+  @Override
+  public Tags and(final String... overrideTags) {
+    if (metricsImplThreadLocal.get() != null) {
+      return metrics().and(overrideTags);
+    } else {
+      return Tags.empty();
+    }
+  }
+
+  @Override
+  public <R, E extends Exception> R time(final String metricName,
+                                         final CheckedSupplier<R, E> supplier,
+                                         final TagsGenerator<R> tagsGeneratorForResult,
+                                         final TagsGenerator<Throwable> tagsGeneratorForThrowable,
+                                         final Tags tags) throws E {
+    if (metricsImplThreadLocal.get() != null) {
+      return metrics().time(metricName, supplier, tagsGeneratorForResult, tagsGeneratorForThrowable, tags);
+    } else {
+      final AtomicReference<E> atomicReference = new AtomicReference<>();
+      final R r = with(metrics -> {
+        try {
+          return metrics.time(metricName, supplier, tagsGeneratorForResult, tagsGeneratorForThrowable, tags);
+        } catch (RuntimeException re) {
+          throw re; // Don't wrap runtime exceptions
+        } catch (Exception e) {
+          atomicReference.set((E) e); // it cannot really be anything else.
+          return null;
+        }
+      });
+      if (atomicReference.get() != null) {
+        throw atomicReference.get();
+      }
+      return r;
+    }
+  }
+
 
   /**
    * Used to store the metrics for the current thread.

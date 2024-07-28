@@ -31,6 +31,26 @@ public interface Metrics {
   void increment(String metricName, long value, Tags tags);
 
   /**
+   * Increments the metric by 1.
+   *
+   * @param metricName to increment.
+   * @param tags       to use, if any.
+   */
+  default void increment(String metricName, Tags tags) {
+    increment(metricName, 1, tags);
+  }
+
+  /**
+   * Increments the metric by 1.
+   *
+   * @param metricName to increment.
+   * @param tags       to use, if any.
+   */
+  default void increment(String metricName, String... tags) {
+    increment(metricName, 1, tags);
+  }
+
+  /**
    * Increments the metric with the value.
    *
    * @param metricName to increment.
@@ -95,6 +115,23 @@ public interface Metrics {
   default <R, E extends Exception> R time(String metricName,
                                           CheckedSupplier<R, E> supplier,
                                           Tags tags) throws E {
+    return time(metricName, supplier, null, null, tags);
+  }
+
+  /**
+   * Times the action in the supplier.
+   *
+   * @param metricName to store the time.
+   * @param supplier   which is called to get the result.
+   * @param tags       optional tags you may want to include.
+   * @param <R>        the type of result from the supplier.
+   * @param <E>        the exception the supplier can throw.
+   * @return the result of the supplier.
+   * @throws E if the supplier throws an exception.
+   */
+  default <R, E extends Exception> R time(String metricName,
+                                          Tags tags,
+                                          CheckedSupplier<R, E> supplier) throws E {
     return time(metricName, supplier, null, null, tags);
   }
 
