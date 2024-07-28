@@ -38,6 +38,11 @@ public class MetricFactory {
         clock, metricPublisher, initialTags, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
   }
 
+  /**
+   * Builder builder.
+   *
+   * @return the builder
+   */
   public static Builder builder() {
     return Builder.builder();
   }
@@ -62,6 +67,37 @@ public class MetricFactory {
   }
 
   /**
+   * Enable the metrics context. This sets up a new metrics instance. It is used internally to manage
+   * the metric from within the with() method. If you use it, it is vital you close it. It is not thread safe.
+   *
+   * @return the metrics context
+   */
+  public MetricsContext enableMetricsContext() {
+    final MetricsImpl oldMetrics = metricsImplThreadLocal.get();
+    final Tags oldTags = oldMetrics == null ? initialTags : oldMetrics.getTags();
+    final MetricsImpl metrics = createMetrics(Tags.of(oldTags));
+    metricsImplThreadLocal.set(metrics);
+    if (!closeAndOpenOnlyForInitial || oldMetrics == null) {
+      metrics.open();
+    }
+    return new MetricsContext(oldMetrics, metrics);
+  }
+
+  /**
+   * Disables the metrics context. This closes up a metrics resetting the current thread context.
+   * It is used internally to manage
+   * the metric from within the with() method. If you use it, it is vital you close it. It is not thread safe.
+   *
+   * @param metricsContext the metrics context
+   */
+  public void disableMetricsContext(final MetricsContext metricsContext) {
+    if (!closeAndOpenOnlyForInitial || metricsContext.oldMetrics == null) {
+      metricsContext.currentMetrics.close();
+    }
+    metricsImplThreadLocal.set(metricsContext.oldMetrics);
+  }
+
+  /**
    * With metrics r.
    *
    * @param <R>      the type parameter
@@ -69,25 +105,33 @@ public class MetricFactory {
    * @return the r
    */
   public <R> R with(final Function<Metrics, R> function) {
-    final MetricsImpl oldMetrics = metricsImplThreadLocal.get();
-    final Tags oldTags = oldMetrics == null ? initialTags : oldMetrics.getTags();
-    MetricsImpl metrics = null;
+    final MetricsContext metricsContext = enableMetricsContext();
     try {
-      metrics = createMetrics(Tags.of(oldTags));
-      metricsImplThreadLocal.set(metrics);
-      if (!closeAndOpenOnlyForInitial || oldMetrics == null) {
-        metrics.open();
-      }
-      return function.apply(metrics);
+      return function.apply(metricsContext.currentMetrics);
     } finally {
-      if (!closeAndOpenOnlyForInitial || oldMetrics == null) {
-        if (metrics != null) {
-          metrics.close();
-        } else {
-          LOGGER.error("[BUG] Metrics was not created, unable to close");
-        }
-      }
-      metricsImplThreadLocal.set(oldMetrics);
+      disableMetricsContext(metricsContext);
+    }
+  }
+
+  /**
+   * Used to store the metrics for the current thread.
+   */
+  public static class MetricsContext {
+
+    private final MetricsImpl oldMetrics;
+    private final MetricsImpl currentMetrics;
+
+
+    /**
+     * Instantiates a new Metrics context.
+     *
+     * @param oldMetrics     the old metrics
+     * @param currentMetrics the current metrics
+     */
+    public MetricsContext(final MetricsImpl oldMetrics,
+                          final MetricsImpl currentMetrics) {
+      this.oldMetrics = oldMetrics;
+      this.currentMetrics = currentMetrics;
     }
   }
 
