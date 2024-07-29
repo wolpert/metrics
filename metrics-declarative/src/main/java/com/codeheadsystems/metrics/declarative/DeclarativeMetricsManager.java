@@ -69,7 +69,7 @@ public class DeclarativeMetricsManager {
    * @return the object
    * @throws Throwable the throwable
    */
-  @Around("@annotation(com.codeheadsystems.metrics.declarative.Metrics)")
+  @Around("execution(* *(..)) && @annotation(com.codeheadsystems.metrics.declarative.Metrics)")
   public Object aroundMetrics(final ProceedingJoinPoint point) throws Throwable {
     final String metricName = getMetricName(point);
     final boolean initialized = INITIALIZED.get();
