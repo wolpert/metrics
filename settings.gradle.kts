@@ -11,4 +11,4 @@ plugins {
 }
 
 rootProject.name = "metrics"
-include("metrics", "metrics-test", "metrics-micrometer")
+include("metrics", "metrics-test", "metrics-micrometer", "metrics-declarative", "metrics-declarative-test")
