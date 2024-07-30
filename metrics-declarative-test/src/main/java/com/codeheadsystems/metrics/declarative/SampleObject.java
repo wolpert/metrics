@@ -41,7 +41,7 @@ public class SampleObject {
    * @param name the a name
    * @return the boolean
    */
-  @Metrics
+  @Metrics("metricsNameWasOverridden")
   public Boolean methodWithMetricsAndTagsReturnTrue(@Tag String name) {
     return true;
   }

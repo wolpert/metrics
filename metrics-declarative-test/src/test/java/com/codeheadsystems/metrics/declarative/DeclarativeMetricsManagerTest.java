@@ -57,7 +57,7 @@ class DeclarativeMetricsManagerTest {
   @Test
   void methodWithMetricsAndTagsReturnTrue() {
     assertThat(sampleObject.methodWithMetricsAndTagsReturnTrue("value")).isTrue();
-    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsReturnTrue"), any(), eq(Tags.empty()));
+    verify(metricPublisher).time(eq("metricsNameWasOverridden"), any(), eq(Tags.empty()));
   }
 
   @Test

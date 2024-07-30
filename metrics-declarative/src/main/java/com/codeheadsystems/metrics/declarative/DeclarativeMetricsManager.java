@@ -3,10 +3,13 @@ package com.codeheadsystems.metrics.declarative;
 import com.codeheadsystems.metrics.MetricFactory;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
+import java.lang.reflect.Method;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
+import org.aspectj.lang.reflect.MethodSignature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,7 +74,8 @@ public class DeclarativeMetricsManager {
    */
   @Around("execution(* *(..)) && @annotation(com.codeheadsystems.metrics.declarative.Metrics)")
   public Object aroundMetrics(final ProceedingJoinPoint point) throws Throwable {
-    final String metricName = getMetricName(point);
+    final Optional<Method> method = getMethod(point);
+    final String metricName = method.map(this::getMetricName).orElseGet(() -> getMetricName(point));
     final boolean initialized = INITIALIZED.get();
     LOGGER.trace("aroundMetrics({}, {})", metricName, initialized);
     if (!initialized) {
@@ -97,6 +101,25 @@ public class DeclarativeMetricsManager {
         throw we.getCause();
       }
       // End wacky exception handling code.
+    }
+  }
+
+  private Optional<Method> getMethod(final ProceedingJoinPoint point) {
+    return Optional.ofNullable(point.getSignature())
+        .filter(signature -> signature instanceof MethodSignature)
+        .map(signature -> (MethodSignature) signature)
+        .map(MethodSignature::getMethod);
+  }
+
+  private String getMetricName(final Method method) {
+    final com.codeheadsystems.metrics.declarative.Metrics annotation =
+        method.getAnnotation(com.codeheadsystems.metrics.declarative.Metrics.class);
+    if (annotation != null && !annotation.value().isEmpty()) {
+      return annotation.value();
+    } else {
+      LOGGER.warn("[BUG] there is @Metrics without an @Metrics tag. This should not be possible.");
+      final String className = method.getDeclaringClass().getSimpleName();
+      return String.format("%s.%s", className, method.getName());
     }
   }
 
