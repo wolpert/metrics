@@ -19,7 +19,7 @@ public class DeclarativeMetricsManager {
   private static final Logger LOGGER = LoggerFactory.getLogger(DeclarativeMetricsManager.class);
   private static final NullMetricsImpl NULL_METRICS = new NullMetricsImpl();
   private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
-  private static volatile Metrics METRICS;
+  private static volatile MetricFactory METRICS;
 
   /**
    * Instantiates a new Declarative metrics manager.
@@ -77,13 +77,26 @@ public class DeclarativeMetricsManager {
     if (!initialized) {
       return point.proceed(point.getArgs());
     } else {
-      return METRICS.time(metricName, () -> {
-        try {
-          return point.proceed(point.getArgs());
-        } catch (final Throwable t) {
-          throw new RuntimeException(t); // TODO: This is bad but time is using a generic exception and java is chocking.
-        }
-      });
+      try {
+        return METRICS.time(metricName, () -> {
+          try {
+            return point.proceed(point.getArgs());
+            // Begin wacky exception handling code. If you know better, create a PR please.
+            // The following code exists because the time() method uses a generic for Exceptions. When
+            // you do that, you cannot ref it directly because you cannot convert the exception into a
+            // throwable. (Yes, even though exception inherits from throwable.) So this is why we have
+            // o write the throwable around the use of the generic.
+            //
+            // This is really due to the Exception not being known at compile time.
+          } catch (Throwable t) {
+            throw new WrappedException(t);
+          }
+        });
+      } catch (WrappedException we) {
+        // we have to rethrow because the time() generic
+        throw we.getCause();
+      }
+      // End wacky exception handling code.
     }
   }
 
@@ -92,4 +105,19 @@ public class DeclarativeMetricsManager {
     final String method = point.getSignature().getName();
     return String.format("%s.%s", className, method);
   }
+
+  /**
+   * This exists because java generics hate when you use them with exception.
+   */
+  static class WrappedException extends RuntimeException {
+    /**
+     * Instantiates a new Wrapped exception.
+     *
+     * @param cause the cause
+     */
+    WrappedException(Throwable cause) {
+      super(cause);
+    }
+  }
+
 }

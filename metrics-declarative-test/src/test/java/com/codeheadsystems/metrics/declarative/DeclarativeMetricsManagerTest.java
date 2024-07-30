@@ -1,51 +1,81 @@
 package com.codeheadsystems.metrics.declarative;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
+import com.codeheadsystems.metrics.Tags;
+import com.codeheadsystems.metrics.impl.MetricPublisher;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
+import java.io.IOException;
+import javax.swing.*;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
 
 /**
  * The type Declarative metrics manager test.
  */
+@ExtendWith(MockitoExtension.class)
 class DeclarativeMetricsManagerTest {
 
-  /**
-   * Test metrics is never null.
-   */
-  @Test
-  void testMetricsIsNeverNull() {
-    assertThat(DeclarativeMetricsManager.metrics()).isNotNull();
+  @Mock private MetricPublisher metricPublisher;
+
+  private SampleObject sampleObject;
+
+  @BeforeEach
+  void setupSampleObject(){
+    sampleObject = new SampleObject();
+    sampleObject.metricsFactory(metricPublisher);
   }
 
-  /**
-   * Metrics factory is created.
-   */
   @Test
   void metricsFactoryIsCreated() {
-    SampleObject sampleObject = new SampleObject();
-    sampleObject.metricsFactory();
     assertThat(DeclarativeMetricsManager.metrics())
         .isNotNull()
         .isNotInstanceOf(NullMetricsImpl.class);
   }
 
-  /**
-   * Call some method.
-   */
   @Test
-  void callSomeMethod() {
-    SampleObject sampleObject = new SampleObject();
-    sampleObject.methodWithMetrics();
+  void methodWithoutMetrics() {
+    sampleObject.methodWithoutMetrics();
+    verifyNoInteractions(metricPublisher);
   }
 
-  /**
-   * Call other method.
-   */
   @Test
-  void callOtherMethod() {
-    SampleObject sampleObject = new SampleObject();
-    sampleObject.methodWithMetricsAndTags("aValue");
+  void methodWithMetrics() {
+    sampleObject.methodWithMetrics();
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetrics"), any(), eq(Tags.empty()));
+  }
+
+  @Test
+  void methodWithMetricsAndTagsReturnTrue() {
+    assertThat(sampleObject.methodWithMetricsAndTagsReturnTrue("value")).isTrue();
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsReturnTrue"), any(), eq(Tags.empty()));
+  }
+
+  @Test
+  void methodWithMetricsAndTagsWithDefinedException() throws IOException {
+    assertThat(sampleObject.methodWithMetricsAndTagsWithDefinedException("value")).isTrue();
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithDefinedException"), any(), eq(Tags.empty()));
+  }
+
+  @Test
+  void methodWithMetricsAndTagsWithThrownException() {
+    assertThatExceptionOfType(IOException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsWithThrownException("value"));
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithThrownException"), any(), eq(Tags.empty()));
+  }
+
+  @Test
+  void methodWithMetricsAndTagsAndThrownRuntimeException()  {
+    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsAndThrownRuntimeException("value"));
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsAndThrownRuntimeException"), any(), eq(Tags.empty()));
   }
 
 }

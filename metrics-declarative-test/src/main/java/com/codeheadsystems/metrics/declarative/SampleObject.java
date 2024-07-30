@@ -3,12 +3,13 @@ package com.codeheadsystems.metrics.declarative;
 import com.codeheadsystems.metrics.MetricFactory;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.impl.MetricPublisher;
+import java.io.IOException;
 import java.time.Duration;
 
 /**
  * The type Sample object.
  */
-public class SampleObject implements MetricPublisher {
+public class SampleObject {
 
   /**
    * Metrics factory metric factory.
@@ -16,8 +17,15 @@ public class SampleObject implements MetricPublisher {
    * @return the metric factory
    */
   @DeclarativeFactory
-  public MetricFactory metricsFactory() {
-    return MetricFactory.builder().build();
+  public MetricFactory metricsFactory(MetricPublisher metricPublisher) {
+    return MetricFactory.builder()
+        .withMetricPublisher(metricPublisher)
+        .build();
+  }
+
+
+  public void methodWithoutMetrics() {
+
   }
 
   /**
@@ -25,7 +33,6 @@ public class SampleObject implements MetricPublisher {
    */
   @Metrics
   public void methodWithMetrics() {
-    System.out.println("methodWithMetrics()");
   }
 
   /**
@@ -35,18 +42,22 @@ public class SampleObject implements MetricPublisher {
    * @return the boolean
    */
   @Metrics
-  public Boolean methodWithMetricsAndTags(@Tag String name) {
-    System.out.println("methodWithMetricsAndTags()");
+  public Boolean methodWithMetricsAndTagsReturnTrue(@Tag String name) {
     return true;
   }
 
-  @Override
-  public void increment(final String metricName, final long value, final Tags tags) {
-
+  @Metrics
+  public boolean methodWithMetricsAndTagsWithDefinedException(@Tag String name) throws IOException {
+    return true;
   }
 
-  @Override
-  public void time(final String metricName, final Duration duration, final Tags tags) {
+  @Metrics
+  public boolean methodWithMetricsAndTagsWithThrownException(@Tag String name) throws IOException {
+    throw new IOException();
+  }
 
+  @Metrics
+  public void methodWithMetricsAndTagsAndThrownRuntimeException(@Tag String name) {
+    throw new IllegalStateException();
   }
 }

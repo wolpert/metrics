@@ -175,7 +175,6 @@ public class MetricFactory implements Metrics {
     }
   }
 
-
   /**
    * Used to store the metrics for the current thread.
    */
@@ -183,7 +182,6 @@ public class MetricFactory implements Metrics {
 
     private final MetricsImpl oldMetrics;
     private final MetricsImpl currentMetrics;
-
 
     /**
      * Instantiates a new Metrics context.
