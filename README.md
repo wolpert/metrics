@@ -11,14 +11,22 @@ easier to use metrics in general by making testing easier.
 
 ![Metrics Build](https://github.com/wolpert/metrics/actions/workflows/gradle.yml/badge.svg)
 
+| Library             | Purpose                | Version                                                                                    |
+|---------------------|------------------------|--------------------------------------------------------------------------------------------|
+| metrics             | Core Library           | ![metrics](https://img.shields.io/maven-central/v/com.codeheadsystems/metrics)             |
+| metrics-test        | Testing utilities      | ![metrics](https://img.shields.io/maven-central/v/com.codeheadsystems/metrics-test)        |
+| metrics-micrometer  | Micrometer integration | ![metrics](https://img.shields.io/maven-central/v/com.codeheadsystems/metrics-micrometer)  |
+| metrics-declarative | Declarative style      | ![metrics](https://img.shields.io/maven-central/v/com.codeheadsystems/metrics-declarative) |
+
+
 ## To use
 
 Include the following in your pom/gradle
 
 ```groovy
 dependencies {
-    implementation 'com.codeheadsystems:metrics:2.0.3'
-    testImplementation 'com.codeheadsystems:metrics-test:2.0.3'
+    implementation 'com.codeheadsystems:metrics:2.0.4'
+    testImplementation 'com.codeheadsystems:metrics-test:2.0.4'
 }
 ```
 
