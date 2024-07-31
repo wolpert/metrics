@@ -2,8 +2,10 @@ package com.codeheadsystems.metrics.declarative;
 
 import com.codeheadsystems.metrics.MetricFactory;
 import com.codeheadsystems.metrics.Metrics;
+import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.aspectj.lang.ProceedingJoinPoint;
@@ -76,13 +78,14 @@ public class DeclarativeMetricsManager {
   public Object aroundMetrics(final ProceedingJoinPoint point) throws Throwable {
     final Optional<Method> method = getMethod(point);
     final String metricName = method.map(this::getMetricName).orElseGet(() -> getMetricName(point));
+    final Tags tags = method.map(m -> getTags(m, point.getArgs())).orElseGet(Tags::empty);
     final boolean initialized = INITIALIZED.get();
     LOGGER.trace("aroundMetrics({}, {})", metricName, initialized);
     if (!initialized) {
       return point.proceed(point.getArgs());
     } else {
       try {
-        return METRICS.time(metricName, () -> {
+        return METRICS.time(metricName, tags, () -> {
           try {
             return point.proceed(point.getArgs());
             // Begin wacky exception handling code. If you know better, create a PR please.
@@ -104,6 +107,28 @@ public class DeclarativeMetricsManager {
     }
   }
 
+  private Tags getTags(final Method method, final Object[] args) {
+    final Tags tags = Tags.empty();
+    final Parameter[] parameters = method.getParameters();
+    if (parameters.length != args.length) {
+      LOGGER.warn("[BUG]getTags() - method {} has {} parameters but {} args", method.getName(), parameters.length, args.length);
+      return tags;
+    }
+    for (int i = 0; i < args.length; i++) {
+      final Tag tag = parameters[i].getAnnotation(Tag.class);
+      if (tag != null) {
+        final Object arg = args[i];
+        final String key = tag.value().isEmpty() ? parameters[i].getName() : tag.value();
+        if (arg == null) { // actually, if arg is null, do we just ignore this?
+          tags.add(key, "null");
+        } else {
+          tags.add(key, arg.toString());
+        }
+      }
+    }
+    return tags;
+  }
+
   private Optional<Method> getMethod(final ProceedingJoinPoint point) {
     return Optional.ofNullable(point.getSignature())
         .filter(signature -> signature instanceof MethodSignature)
@@ -114,10 +139,12 @@ public class DeclarativeMetricsManager {
   private String getMetricName(final Method method) {
     final com.codeheadsystems.metrics.declarative.Metrics annotation =
         method.getAnnotation(com.codeheadsystems.metrics.declarative.Metrics.class);
-    if (annotation != null && !annotation.value().isEmpty()) {
+    if (annotation != null && !annotation.value().isEmpty()) { // if the value is set, use it.
       return annotation.value();
     } else {
-      LOGGER.warn("[BUG] there is @Metrics without an @Metrics tag. This should not be possible.");
+      if (annotation == null) {
+        LOGGER.warn("[BUG] there is @Metrics without an @Metrics tag. This should not be possible.");
+      }
       final String className = method.getDeclaringClass().getSimpleName();
       return String.format("%s.%s", className, method.getName());
     }

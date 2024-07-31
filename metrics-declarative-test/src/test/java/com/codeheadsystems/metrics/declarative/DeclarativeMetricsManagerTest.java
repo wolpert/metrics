@@ -36,6 +36,12 @@ class DeclarativeMetricsManagerTest {
   }
 
   @Test
+  void verifyMetricsExistsViaInstance() {
+    DeclarativeMetricsManager.metrics().increment("test", Tags.empty());
+    verify(metricPublisher).increment("test", 1L, Tags.empty());
+  }
+
+  @Test
   void metricsFactoryIsCreated() {
     assertThat(DeclarativeMetricsManager.metrics())
         .isNotNull()
@@ -57,25 +63,25 @@ class DeclarativeMetricsManagerTest {
   @Test
   void methodWithMetricsAndTagsReturnTrue() {
     assertThat(sampleObject.methodWithMetricsAndTagsReturnTrue("value")).isTrue();
-    verify(metricPublisher).time(eq("metricsNameWasOverridden"), any(), eq(Tags.empty()));
+    verify(metricPublisher).time(eq("metricsNameWasOverridden"), any(), eq(Tags.of("name", "value")));
   }
 
   @Test
   void methodWithMetricsAndTagsWithDefinedException() throws IOException {
-    assertThat(sampleObject.methodWithMetricsAndTagsWithDefinedException("value")).isTrue();
-    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithDefinedException"), any(), eq(Tags.empty()));
+    assertThat(sampleObject.methodWithMetricsAndTagsWithDefinedException("value", "fred")).isTrue();
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithDefinedException"), any(), eq(Tags.of("anotherName", "value")));
   }
 
   @Test
   void methodWithMetricsAndTagsWithThrownException() {
-    assertThatExceptionOfType(IOException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsWithThrownException("value"));
-    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithThrownException"), any(), eq(Tags.empty()));
+    assertThatExceptionOfType(IOException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsWithThrownException("value", "smith"));
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsWithThrownException"), any(), eq(Tags.of("name", "value", "thing", "smith")));
   }
 
   @Test
   void methodWithMetricsAndTagsAndThrownRuntimeException()  {
-    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsAndThrownRuntimeException("value"));
-    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsAndThrownRuntimeException"), any(), eq(Tags.empty()));
+    assertThatExceptionOfType(IllegalStateException.class).isThrownBy(() -> sampleObject.methodWithMetricsAndTagsAndThrownRuntimeException(null));
+    verify(metricPublisher).time(eq("SampleObject.methodWithMetricsAndTagsAndThrownRuntimeException"), any(), eq(Tags.of("notname", "null")));
   }
 
 }

@@ -13,10 +13,11 @@ import java.lang.annotation.Target;
 public @interface Tag {
 
   /**
-   * Set this if you want to specify the tag name in an override..
+   * Set this if you to include the tag in the metrics. You 'have to' set the value to a non-empty string for it to
+   * work. (I cannot use reflection has you cannot be sure to get the name of the object parameter passed in.)
    *
    * @return the string
    */
-  String value() default "";
+  String value();
 
 }

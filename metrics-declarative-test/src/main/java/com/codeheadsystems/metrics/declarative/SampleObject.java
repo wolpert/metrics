@@ -42,22 +42,22 @@ public class SampleObject {
    * @return the boolean
    */
   @Metrics("metricsNameWasOverridden")
-  public Boolean methodWithMetricsAndTagsReturnTrue(@Tag String name) {
+  public Boolean methodWithMetricsAndTagsReturnTrue(@Tag("name") String name) {
     return true;
   }
 
   @Metrics
-  public boolean methodWithMetricsAndTagsWithDefinedException(@Tag String name) throws IOException {
+  public boolean methodWithMetricsAndTagsWithDefinedException(@Tag("anotherName") String name, String other) throws IOException {
     return true;
   }
 
   @Metrics
-  public boolean methodWithMetricsAndTagsWithThrownException(@Tag String name) throws IOException {
+  public boolean methodWithMetricsAndTagsWithThrownException(@Tag("name") String name, @Tag("thing") String other) throws IOException {
     throw new IOException();
   }
 
   @Metrics
-  public void methodWithMetricsAndTagsAndThrownRuntimeException(@Tag String name) {
+  public void methodWithMetricsAndTagsAndThrownRuntimeException(@Tag("notname") String name) {
     throw new IllegalStateException();
   }
 }
