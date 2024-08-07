@@ -4,7 +4,7 @@
 [versions]
 aspectj = "1.9.22.1"
 assertj = "3.26.3"
-dagger = "2.51.1"
+dagger = "2.52"
 junit-jupiter = "5.10.3"
 junit-platform = '1.10.3'
 micrometer = '1.13.2'
