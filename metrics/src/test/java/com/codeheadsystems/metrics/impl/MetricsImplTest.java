@@ -149,7 +149,6 @@ class MetricsImplTest {
         .time(METRIC_NAME, Duration.ofMillis(100), DEFAULT_TAGS.from(ERROR_TAGS));
   }
 
-
   @Test
   void time_withTags() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
@@ -157,6 +156,17 @@ class MetricsImplTest {
 
     verify(metricPublisher)
         .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
+    assertThat(result).isEqualTo(RESULT);
+  }
+
+  @Test
+  void time_withTags_changedInMethod() {
+    when(clock.millis()).thenReturn(200L).thenReturn(300L);
+    final Tags tags = Tags.of(OVERRIDE_ARRAY);
+    final Object result = metricsImpl.time(METRIC_NAME, () -> testMethodWithTags(tags, "added", "true"), tags);
+
+    verify(metricPublisher)
+        .time(METRIC_NAME, Duration.ofMillis(100), Tags.of(COMBINED_TAGS).add("added", "true"));
     assertThat(result).isEqualTo(RESULT);
   }
 
@@ -221,6 +231,11 @@ class MetricsImplTest {
   }
 
   Object testMethod() {
+    return RESULT;
+  }
+
+  Object testMethodWithTags(Tags tags, String... newTags) {
+    tags.add(newTags);
     return RESULT;
   }
 

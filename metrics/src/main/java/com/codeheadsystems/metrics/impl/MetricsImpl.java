@@ -108,35 +108,50 @@ public class MetricsImpl implements AutoCloseable, Metrics {
     metricPublisher.increment(metricName, value, aggregateTags);
   }
 
+  /**
+   * Note that the tags are rendered after the supplier was executed. .So any changes to the
+   * tags object will be viewable within the final result.
+   *
+   * @param metricName                to store the time.
+   * @param supplier                  which is called to get the result.
+   * @param tagsGeneratorForResult    optional generator for tags based on the result.
+   * @param tagsGeneratorForThrowable optional tag generator for any thrown exception.
+   * @param tags                      optional tags you may want to include.
+   * @param <R>                       type being returned.
+   * @param <E>                       exception that can be thrown.
+   * @return value of the supplier.
+   * @throws E should an error happen.
+   */
   @Override
   public <R, E extends Exception> R time(final String metricName,
                                          final CheckedSupplier<R, E> supplier,
                                          final TagsGenerator<R> tagsGeneratorForResult,
                                          final TagsGenerator<Throwable> tagsGeneratorForThrowable,
                                          final Tags tags) throws E {
-    final Tags aggregateTags = getTags().from(tags);
+    final Tags executedTags = Tags.empty();
     final long start = clock.millis();
     long endDuration = 0;
     try {
       final R r = supplier.get();
       endDuration = clock.millis();
       if (tagsGeneratorForResult != null) {
-        aggregateTags.add(tagsGeneratorForResult.from(r));
+        executedTags.add(tagsGeneratorForResult.from(r));
       } else if (tagsGeneratorRegistry != null) {
-        tagsGeneratorRegistry.aggregateIfFound(aggregateTags, r);
+        tagsGeneratorRegistry.aggregateIfFound(executedTags, r);
       }
       return r;
     } catch (final Throwable e) {
       endDuration = clock.millis();
       if (tagsGeneratorForThrowable != null) {
-        aggregateTags.add(tagsGeneratorForThrowable.from(e));
+        executedTags.add(tagsGeneratorForThrowable.from(e));
       } else if (defaultTagsGeneratorForThrowable != null) {
-        aggregateTags.add(defaultTagsGeneratorForThrowable.from(e));
+        executedTags.add(defaultTagsGeneratorForThrowable.from(e));
       }
       throw e;
     } finally {
       final long duration = endDuration - start;
-      metricPublisher.time(metricName, Duration.ofMillis(duration), aggregateTags);
+      final Tags finalTags = getTags().from(tags).add(executedTags);
+      metricPublisher.time(metricName, Duration.ofMillis(duration), finalTags);
     }
   }
 

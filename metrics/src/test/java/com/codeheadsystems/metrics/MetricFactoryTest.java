@@ -55,19 +55,20 @@ class MetricFactoryTest {
     final MetricFactory metricFactory = MetricFactory.builder()
         .withMetricPublisher(metricPublisher)
         .withTags(BASE_TAGS).build();
-    final Boolean result = metricFactory.with(metrics -> metrics.time("test", () -> {
-      metrics.increment("test", 1L);
-      boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
-      metrics.and(ADDED_TAGS);
-      metrics.increment("test", 2L);
-      testResult = testResult && ((MetricsImpl) metricFactory.metrics()).getTags().equals(COMBINED_TAGS);
-      return testResult;
-    }));
+    final Boolean result = metricFactory.with(metrics ->
+        metrics.time("test", () -> {
+          metrics.increment("test", 1L);
+          boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
+          metrics.and(ADDED_TAGS);
+          metrics.increment("test", 2L);
+          testResult = testResult && ((MetricsImpl) metricFactory.metrics()).getTags().equals(COMBINED_TAGS);
+          return testResult;
+        }));
     assertThat(result).isTrue();
     verify(metricPublisher).open();
     verify(metricPublisher).increment("test", 1L, BASE_TAGS);
     verify(metricPublisher).increment("test", 2L, COMBINED_TAGS);
-    verify(metricPublisher).time(eq("test"), any(), eq(BASE_TAGS));
+    verify(metricPublisher).time(eq("test"), any(), eq(COMBINED_TAGS));
     verify(metricPublisher).close();
     final Boolean secondResult = metricFactory.with(metrics -> metrics.time("test", () -> {
       boolean testResult = ((MetricsImpl) metrics).getTags().equals(BASE_TAGS);
