@@ -3,7 +3,7 @@ plugins {
     `maven-publish`
     signing
     checkstyle
-    id("io.freefair.aspectj.post-compile-weaving") version "8.7.1"
+    id("io.freefair.aspectj.post-compile-weaving") version "8.10"
 }
 
 
