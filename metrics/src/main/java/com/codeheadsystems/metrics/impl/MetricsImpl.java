@@ -23,6 +23,7 @@ import com.codeheadsystems.metrics.TagsGenerator;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +40,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   private final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
   private final Tags tags;
+  private final Function<String, String> name;
 
   /**
    * Default constructor.
@@ -47,18 +49,21 @@ public class MetricsImpl implements AutoCloseable, Metrics {
    * @param metricPublisher                  the metric implementation.
    * @param defaultTagsGeneratorForThrowable to use for exceptions, optional.
    * @param tagsGeneratorRegistry            to help with tags.
+   * @param name                             function to convert a name to a metric name.
    */
   public MetricsImpl(final Clock clock,
                      final MetricPublisher metricPublisher,
                      final TagsGenerator<Throwable> defaultTagsGeneratorForThrowable,
                      final TagsGeneratorRegistry tagsGeneratorRegistry,
-                     final Tags tags) {
+                     final Tags tags,
+                     final Function<String, String> name) {
     LOGGER.info("MetricsImpl({},{})", metricPublisher, tags);
     this.clock = clock;
     this.tagsGeneratorRegistry = tagsGeneratorRegistry;
     this.metricPublisher = metricPublisher;
     this.tags = tags;
     this.defaultTagsGeneratorForThrowable = defaultTagsGeneratorForThrowable;
+    this.name = name;
   }
 
   /**
@@ -105,7 +110,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   @Override
   public void increment(final String metricName, final long value, final Tags tags) {
     final Tags aggregateTags = getTags().from(tags);
-    metricPublisher.increment(metricName, value, aggregateTags);
+    metricPublisher.increment(name.apply(metricName), value, aggregateTags);
   }
 
   /**
@@ -151,7 +156,7 @@ public class MetricsImpl implements AutoCloseable, Metrics {
     } finally {
       final long duration = endDuration - start;
       final Tags finalTags = getTags().from(tags).add(executedTags);
-      metricPublisher.time(metricName, Duration.ofMillis(duration), finalTags);
+      metricPublisher.time(name.apply(metricName), Duration.ofMillis(duration), finalTags);
     }
   }
 

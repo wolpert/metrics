@@ -10,6 +10,7 @@ import com.codeheadsystems.metrics.TagsGenerator;
 import com.codeheadsystems.metrics.helper.TagsGeneratorRegistry;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.function.Function;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +30,7 @@ class MetricsImplTest {
   private static final Tags RESULT_TAGS = new Tags("result", "true");
   private static final TagsGenerator<Object> TAGS_GENERATOR_RESULT = object -> RESULT_TAGS;
   private static final TagsGenerator<Throwable> TAGS_GENERATOR_ERROR = object -> ERROR_TAGS;
+  private static final Function<String, String> metricsName = Function.identity();
 
   @Mock private MetricPublisher metricPublisher;
   @Mock private Clock clock;
@@ -43,7 +45,7 @@ class MetricsImplTest {
         metricPublisher,
         null,
         null,
-        DEFAULT_TAGS);
+        DEFAULT_TAGS, metricsName);
   }
 
   @Test
@@ -140,7 +142,7 @@ class MetricsImplTest {
 
   @Test
   void time_baseWithException_defaultHandler() throws SomeException {
-    metricsImpl = new MetricsImpl(clock, metricPublisher, TAGS_GENERATOR_ERROR, null, DEFAULT_TAGS);
+    metricsImpl = new MetricsImpl(clock, metricPublisher, TAGS_GENERATOR_ERROR, null, DEFAULT_TAGS, metricsName);
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     assertThatExceptionOfType(SomeException.class)
         .isThrownBy(() -> metricsImpl.time(METRIC_NAME, this::testMethodWithExceptionThrown));

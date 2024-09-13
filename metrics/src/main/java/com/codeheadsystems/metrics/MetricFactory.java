@@ -26,6 +26,7 @@ public class MetricFactory implements Metrics {
   private final TagsGeneratorRegistry tagsGeneratorRegistry;
   private final Boolean closeAndOpenOnlyForInitial;
   private final ThreadLocal<MetricsImpl> metricsImplThreadLocal;
+  private final Function<String, String> metricsName;
 
   private MetricFactory(final Builder builder) {
     this.clock = builder.clock;
@@ -35,6 +36,7 @@ public class MetricFactory implements Metrics {
     this.tagsGeneratorRegistry = builder.tagsGeneratorRegistry;
     this.closeAndOpenOnlyForInitial = builder.closeAndOpenOnlyForInitial;
     this.metricsImplThreadLocal = new ThreadLocal<>();
+    this.metricsName = builder.prefix == null ? Function.identity() : s -> builder.prefix + "." + s;
     LOGGER.info("MetricFactory({},{},{},{},{})",
         clock, metricPublisher, initialTags, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
   }
@@ -64,7 +66,7 @@ public class MetricFactory implements Metrics {
   }
 
   private MetricsImpl createMetrics(final Tags tags) {
-    return new MetricsImpl(clock, metricPublisher, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry, tags);
+    return new MetricsImpl(clock, metricPublisher, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry, tags, metricsName);
   }
 
   /**
@@ -211,6 +213,7 @@ public class MetricFactory implements Metrics {
     private TagsGenerator<Throwable> defaultTagsGeneratorForThrowable;
     private TagsGeneratorRegistry tagsGeneratorRegistry = new TagsGeneratorRegistry();
     private Boolean closeAndOpenOnlyForInitial = true;
+    private String prefix = null;
 
     private Builder() {
     }
@@ -223,6 +226,18 @@ public class MetricFactory implements Metrics {
     public static Builder builder() {
       LOGGER.info("MetricFactory.Builder()");
       return new Builder();
+    }
+
+    /**
+     * With prefix builder.
+     *
+     * @param prefix the prefix
+     * @return the builder
+     */
+    public Builder withPrefix(final String prefix) {
+      LOGGER.info("withPrefix({})", prefix);
+      this.prefix = prefix;
+      return this;
     }
 
     /**
