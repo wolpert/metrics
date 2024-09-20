@@ -1,5 +1,7 @@
 package com.codeheadsystems.metrics;
 
+import java.time.Duration;
+
 /**
  * Metric interface.
  */
@@ -151,5 +153,15 @@ public interface Metrics {
                                           String... tags) throws E {
     return time(metricName, supplier, Tags.of(tags));
   }
+
+  /**
+   * Allows to set the time metric manually instead of using the helpers.
+   *
+   * @param metricName to store the time.
+   * @param duration   how long it took.
+   * @param tags       optional tags you may want to include.
+   */
+  void publishTime(String metricName, Duration duration, Tags tags);
+
 
 }

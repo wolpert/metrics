@@ -81,6 +81,13 @@ class MetricsImplTest {
   }
 
   @Test
+  void testPublishTime() {
+    metricsImpl.publishTime(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
+    verify(metricPublisher)
+        .time(METRIC_NAME, Duration.ofMillis(100), COMBINED_TAGS);
+  }
+
+  @Test
   void time_base() {
     when(clock.millis()).thenReturn(200L).thenReturn(300L);
     final Object result = metricsImpl.time(METRIC_NAME, this::testMethod);

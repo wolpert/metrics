@@ -87,6 +87,15 @@ public class MetricsImpl implements AutoCloseable, Metrics {
   }
 
   /**
+   * Gets the clock.
+   *
+   * @return clock. clock
+   */
+  public Clock clock() {
+    return clock;
+  }
+
+  /**
    * Gets the current tags. Changing tags from this object are not saved in the thread local.
    *
    * @return tags. tags
@@ -158,6 +167,11 @@ public class MetricsImpl implements AutoCloseable, Metrics {
       final Tags finalTags = getTags().from(tags).add(executedTags);
       metricPublisher.time(name.apply(metricName), Duration.ofMillis(duration), finalTags);
     }
+  }
+
+  @Override
+  public void publishTime(final String metricName, final Duration duration, final Tags tags) {
+    metricPublisher.time(name.apply(metricName), duration, tags);
   }
 
 }

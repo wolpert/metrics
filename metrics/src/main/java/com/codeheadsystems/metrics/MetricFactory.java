@@ -6,6 +6,7 @@ import com.codeheadsystems.metrics.impl.MetricsImpl;
 import com.codeheadsystems.metrics.impl.NullMetricsImpl;
 import com.codeheadsystems.metrics.impl.NullMetricsPublisher;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import org.slf4j.Logger;
@@ -177,6 +178,11 @@ public class MetricFactory implements Metrics {
     }
   }
 
+  @Override
+  public void publishTime(final String metricName, final Duration duration, final Tags tags) {
+    metrics().publishTime(metricName, duration, tags);
+  }
+
   /**
    * Used to store the metrics for the current thread.
    */
@@ -184,6 +190,7 @@ public class MetricFactory implements Metrics {
 
     private final MetricsImpl oldMetrics;
     private final MetricsImpl currentMetrics;
+    private final long start;
 
     /**
      * Instantiates a new Metrics context.
@@ -195,6 +202,16 @@ public class MetricFactory implements Metrics {
                           final MetricsImpl currentMetrics) {
       this.oldMetrics = oldMetrics;
       this.currentMetrics = currentMetrics;
+      this.start = currentMetrics.clock().millis();
+    }
+
+    /**
+     * Duration duration.
+     *
+     * @return the duration
+     */
+    public Duration duration() {
+      return Duration.ofMillis(currentMetrics.clock().millis() - start);
     }
   }
 

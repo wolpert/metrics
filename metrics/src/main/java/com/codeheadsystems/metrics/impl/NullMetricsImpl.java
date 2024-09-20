@@ -4,6 +4,7 @@ import com.codeheadsystems.metrics.CheckedSupplier;
 import com.codeheadsystems.metrics.Metrics;
 import com.codeheadsystems.metrics.Tags;
 import com.codeheadsystems.metrics.TagsGenerator;
+import java.time.Duration;
 
 /**
  * Empty class that you can use for a metrics instance.
@@ -38,5 +39,10 @@ public class NullMetricsImpl implements Metrics {
                                          final CheckedSupplier<R, E> supplier,
                                          final Tags tags) throws E {
     return supplier.get();
+  }
+
+  @Override
+  public void publishTime(final String metricName, final Duration duration, final Tags tags) {
+
   }
 }

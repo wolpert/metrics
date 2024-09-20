@@ -45,7 +45,7 @@ class MetricFactoryTest {
         .build();
     final Object result = metricFactory.with(metrics -> metrics.time("test", () -> "result"));
     assertThat(result).isEqualTo("result");
-    verify(clock, times(2)).millis();
+    verify(clock, times(3)).millis();
     verify(metricPublisher).time("test", Duration.ofMillis(0), Tags.empty());
     verify(metricPublisher).close();
   }
