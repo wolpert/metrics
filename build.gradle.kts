@@ -9,7 +9,7 @@ nexusPublishing {
 }
 allprojects {
     group = "com.codeheadsystems"
-    version = "2.0.7"
+    version = "2.0.8-SNAPSHOT"
 
     repositories {
         mavenLocal()
