@@ -37,7 +37,7 @@ public class MetricFactory implements Metrics {
     this.tagsGeneratorRegistry = builder.tagsGeneratorRegistry;
     this.closeAndOpenOnlyForInitial = builder.closeAndOpenOnlyForInitial;
     this.metricsImplThreadLocal = new ThreadLocal<>();
-    this.metricsName = builder.prefix == null ? Function.identity() : s -> builder.prefix + "." + s;
+    this.metricsName = builder.prefix == null ? Function.identity() : s -> builder.prefix + s;
     LOGGER.info("MetricFactory({},{},{},{},{})",
         clock, metricPublisher, initialTags, defaultTagsGeneratorForThrowable, tagsGeneratorRegistry);
   }
