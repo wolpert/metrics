@@ -5,8 +5,8 @@
 aspectj = "1.9.22.1"
 assertj = "3.26.3"
 dagger = "2.52"
-junit-jupiter = "5.11.2"
-junit-platform = '1.11.2'
+junit-jupiter = "5.11.3"
+junit-platform = '1.11.3'
 micrometer = '1.13.6'
 metrics = '4.2.28'
 mokito = '5.14.2'
