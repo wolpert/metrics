@@ -10,7 +10,7 @@ junit-platform = '1.11.3'
 micrometer = '1.13.6'
 metrics = '4.2.28'
 mokito = '5.14.2'
-logback = '1.5.11'
+logback = '1.5.12'
 slf4j = '2.0.16'
 
 [libraries]
