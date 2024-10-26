@@ -39,6 +39,7 @@ public class DeclarativeMetricsManager {
    * @return the metrics
    */
   public static Metrics metrics() {
+    LOGGER.trace("metrics():{}", METRICS);
     return METRICS == null ? NULL_METRICS : METRICS;
   }
 
