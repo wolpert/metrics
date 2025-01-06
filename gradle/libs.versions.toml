@@ -3,14 +3,14 @@
 
 [versions]
 aspectj = "1.9.22.1"
-assertj = "3.27.1"
+assertj = "3.27.2"
 dagger = "2.54"
 junit-jupiter = "5.11.4"
 junit-platform = '1.11.4'
 micrometer = '1.14.2'
 metrics = '4.2.29'
 mokito = '5.15.2'
-logback = '1.5.15'
+logback = '1.5.16'
 slf4j = '2.0.16'
 
 [libraries]
