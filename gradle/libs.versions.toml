@@ -3,7 +3,7 @@
 
 [versions]
 aspectj = "1.9.22.1"
-assertj = "3.27.2"
+assertj = "3.27.3"
 dagger = "2.55"
 junit-jupiter = "5.11.4"
 junit-platform = '1.11.4'
