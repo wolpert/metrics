@@ -1,6 +1,6 @@
 plugins {
     `java-library`
-    id("io.freefair.aspectj.post-compile-weaving") version "8.11"
+    id("io.freefair.aspectj.post-compile-weaving") version "8.12"
 }
 
 
