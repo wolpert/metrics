@@ -1,5 +1,8 @@
 # Metrics
 
+# NOTE: ARCHIVED AND THIS IS MOVED TO https://github.com/wolpert/libraries
+
+
 Project provides the ability to use micrometer metrics in your dropwizard
 project that uses Dagger for dependency injection.
 
